@@ -4,6 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import neo.bank.contocorrente.application.ports.input.commands.CreaContoCorrenteCmd;
+import neo.bank.contocorrente.application.ports.input.commands.ImpostaSoglieBonificoCmd;
 import neo.bank.contocorrente.application.ports.output.ContoCorrenteOutputPort;
 import neo.bank.contocorrente.application.ports.output.ErrorEventsPublisherPort;
 import neo.bank.contocorrente.domain.models.aggregates.ContoCorrente;
@@ -43,6 +44,14 @@ public class ContoCorrenteUseCase {
         log.info("Recupero terminato");
         return contoCorrente;
     }
+
+    public void impostaSoglieBonifico(ImpostaSoglieBonificoCmd cmd) {
+        log.info("Comando [impostaSoglieBonifico] in esecuzione...");
+        ContoCorrente cc = ccOutputPort.recuperaDaId(cmd.getIdContoCorrente());
+        cc.impostaSoglieBonifico(cmd.getIdCliente(), cmd.getNuovSoglieBonifico());
+        ccOutputPort.salva(cc);
+        log.info("Comando [impostaSoglieBonifico] terminato...");
+    }
     // public void chiudiContoCorrente(ChiudiContoCorrenteCmd cmd) {
     //     log.info("Comando [chiudiContoCorrente] in esecuzione...");
     //     ContoCorrente cc = ccOutputPort.recuperaDaId(cmd.getIdContoCorrente());
@@ -67,11 +76,5 @@ public class ContoCorrenteUseCase {
     //     log.info("Comando [valutaCointestazione] terminato...");
     // }
 
-    // public void impostaSoglieBonifico(ImpostaSoglieBonificoCmd cmd) {
-    //     log.info("Comando [impostaSoglieBonifico] in esecuzione...");
-    //     ContoCorrente cc = ccOutputPort.recuperaDaId(cmd.getIdContoCorrente());
-    //     cc.impostaSoglieBonifico(cmd.getIdContoCorrente(), cmd.getNuovSoglieBonifico());
-    //     ccOutputPort.salva(cc);
-    //     log.info("Comando [impostaSoglieBonifico] terminato...");
-    // }
+
 }

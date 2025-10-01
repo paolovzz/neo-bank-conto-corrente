@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import neo.bank.contocorrente.domain.exceptions.BusinessRuleException;
 import neo.bank.contocorrente.domain.models.events.ContoCorrenteAperto;
 import neo.bank.contocorrente.domain.models.events.EventPayload;
+import neo.bank.contocorrente.domain.models.events.SoglieBonificoImpostate;
 import neo.bank.contocorrente.domain.models.vo.CoordinateBancarie;
 import neo.bank.contocorrente.domain.models.vo.DataApertura;
 import neo.bank.contocorrente.domain.models.vo.DataChiusura;
@@ -54,6 +55,11 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
         return cc;
     }
 
+    public void impostaSoglieBonifico(IdCliente idClienteRichiedente, SoglieBonifico nuoveSoglieBonifico) {
+        verificaAccessoCliente(idClienteRichiedente);
+        verificaContoChiuso();
+        events(new SoglieBonificoImpostate(nuoveSoglieBonifico));
+    }
 
     private void apply(ContoCorrenteAperto event) {
         this.clientiAssociati.add(event.idCliente());
@@ -64,34 +70,15 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
         this.soglieBonifico = event.soglieBonifico();
     }
 
-    // private void apply(ContoCorrenteChiuso event) {
-    //     this.dataChiusura = event.dataChiusura();
-    // }
-    
-    // private void apply(RichiestaCointestazioneValidata event) {
-    //     clientiAssociati.compute(event.IdCliente(), (key, val) -> false); 
-    // }
-
-    // private void apply(ClienteDissociato event) {
-    //     this.clientiAssociati.remove(event.IdCliente());
-    // }
-
-    // private void apply(CointestazioneConfermata event) {
-    //     clientiAssociati.compute(event.IdCliente(), (key, val) -> true); 
-    // }
-
-    // private void apply(CointestazioneRifiutata event) {
-    //     clientiAssociati.remove(event.IdCliente()); 
-    // }
-
-    // private void apply(SoglieBonificoImpostate event) {
-    //     soglieBonifico = event.soglieBonifico();
-    // }
+    private void apply(SoglieBonificoImpostate event) {
+        soglieBonifico = event.soglieBonifico();
+    }
 
     @Override
     public void apply(EventPayload event) {
         switch (event) {
             case ContoCorrenteAperto ev -> apply((ContoCorrenteAperto) ev);
+            case SoglieBonificoImpostate ev -> apply((SoglieBonificoImpostate) ev);
             default -> throw new IllegalArgumentException("Evento non supportato");
         }
     }

@@ -4,6 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -11,10 +12,13 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import neo.bank.contocorrente.application.ContoCorrenteUseCase;
 import neo.bank.contocorrente.application.ports.input.commands.CreaContoCorrenteCmd;
+import neo.bank.contocorrente.application.ports.input.commands.ImpostaSoglieBonificoCmd;
 import neo.bank.contocorrente.domain.models.aggregates.ContoCorrente;
 import neo.bank.contocorrente.domain.models.vo.IdCliente;
 import neo.bank.contocorrente.domain.models.vo.IdContoCorrente;
+import neo.bank.contocorrente.domain.models.vo.SoglieBonifico;
 import neo.bank.contocorrente.framework.adapter.input.rest.request.CreaContoCorrenteRequest;
+import neo.bank.contocorrente.framework.adapter.input.rest.request.ImpostaSoglieBonificoRequest;
 import neo.bank.contocorrente.framework.adapter.input.rest.response.ContoCorrenteInfoResponse;
 
 @Path("/cc")
@@ -39,6 +43,14 @@ public class ContoCorrenteResource {
     public Response creaContoCorrente(CreaContoCorrenteRequest cmd) {
         app.creaContoCorrente(new CreaContoCorrenteCmd(new IdCliente(cmd.getIdCliente())));
         return Response.ok().build();
+    }
+
+    @Path("/{id}/soglie-bonifici")
+    @PUT
+    @Produces(value = MediaType.APPLICATION_JSON)
+    public Response impostaSoglieBonifici(@PathParam(value = "id") String idContoCorrente, ImpostaSoglieBonificoRequest request) {
+        app.impostaSoglieBonifico(new ImpostaSoglieBonificoCmd(new IdCliente(request.getIdCliente()), new IdContoCorrente(idContoCorrente), new SoglieBonifico(request.getSogliaMensile(), request.getSogliaGiornaliera())));
+        return Response.noContent().build();
     }
     
 }
