@@ -7,6 +7,8 @@ import neo.bank.contocorrente.application.ports.input.commands.CreaContoCorrente
 import neo.bank.contocorrente.application.ports.output.ContoCorrenteOutputPort;
 import neo.bank.contocorrente.application.ports.output.ErrorEventsPublisherPort;
 import neo.bank.contocorrente.domain.models.aggregates.ContoCorrente;
+import neo.bank.contocorrente.domain.models.vo.IdContoCorrente;
+import neo.bank.contocorrente.domain.services.AnagraficaClienteService;
 import neo.bank.contocorrente.domain.services.GeneratoreCoordinateBancarieService;
 import neo.bank.contocorrente.domain.services.GeneratoreIdService;
 
@@ -21,21 +23,30 @@ public class ContoCorrenteUseCase {
     private GeneratoreCoordinateBancarieService generatoreCoordinateBancarie;
 
     @Inject
+    private AnagraficaClienteService anagraficaClienteService;
+
+    @Inject
     private ContoCorrenteOutputPort ccOutputPort;
     @Inject
     private ErrorEventsPublisherPort errorEventsPublisherPort;
 
     public void creaContoCorrente(CreaContoCorrenteCmd cmd) {
         log.info("Comando [creaContoCorrente] in esecuzione...");
-        ContoCorrente cc = ContoCorrente.apri(generatoreIdService, generatoreCoordinateBancarie, cmd.getIdCliente());
+        ContoCorrente cc = ContoCorrente.apri(generatoreIdService, generatoreCoordinateBancarie, anagraficaClienteService, cmd.getIdCliente());
         ccOutputPort.salva(cc);
         log.info("Comando [creaContoCorrente] terminato...");
     }
 
+    public ContoCorrente recuperaContoCorrenteDaId(IdContoCorrente idContoCorrente) {
+        log.info("Recupero info contoCorrente per id [{}]", idContoCorrente.id());
+        ContoCorrente contoCorrente = ccOutputPort.recuperaDaId(idContoCorrente);
+        log.info("Recupero terminato");
+        return contoCorrente;
+    }
     // public void chiudiContoCorrente(ChiudiContoCorrenteCmd cmd) {
     //     log.info("Comando [chiudiContoCorrente] in esecuzione...");
     //     ContoCorrente cc = ccOutputPort.recuperaDaId(cmd.getIdContoCorrente());
-    //     cc.chiudi(cmd.getIdCliente());
+    //     cc.chiudi(cmd.getIdContoCorrente());
     //     ccOutputPort.salva(cc);
     //     log.info("Comando [chiudiContoCorrente] terminato...");
     // }
@@ -43,7 +54,7 @@ public class ContoCorrenteUseCase {
     // public void validaRichiestaCointestazione(ValidaRichiestaCointestazioneCmd cmd) {
     //     log.info("Comando [validaRichiestaCointestazione] in esecuzione...");
     //     ContoCorrente cc = ccOutputPort.recuperaDaId(cmd.getIdContoCorrente());
-    //     cc.validaRichiestaCointestazione(cmd.getIdClienteRichiedente(), cmd.getNuovoIdCliente());
+    //     cc.validaRichiestaCointestazione(cmd.getIdContoCorrenteRichiedente(), cmd.getNuovoIdContoCorrente());
     //     ccOutputPort.salva(cc);
     //     log.info("Comando [validaRichiestaCointestazione] terminato...");
     // }
@@ -51,7 +62,7 @@ public class ContoCorrenteUseCase {
     // public void valutaCointestazione(ValutaCointestazioneCmd cmd) {
     //     log.info("Comando [valutaCointestazione] in esecuzione...");
     //     ContoCorrente cc = ccOutputPort.recuperaDaId(cmd.getIdContoCorrente());
-    //     cc.valutaCointestazione(cmd.getIdCliente(), cmd.isConferma());
+    //     cc.valutaCointestazione(cmd.getIdContoCorrente(), cmd.isConferma());
     //     ccOutputPort.salva(cc);
     //     log.info("Comando [valutaCointestazione] terminato...");
     // }
@@ -59,7 +70,7 @@ public class ContoCorrenteUseCase {
     // public void impostaSoglieBonifico(ImpostaSoglieBonificoCmd cmd) {
     //     log.info("Comando [impostaSoglieBonifico] in esecuzione...");
     //     ContoCorrente cc = ccOutputPort.recuperaDaId(cmd.getIdContoCorrente());
-    //     cc.impostaSoglieBonifico(cmd.getIdCliente(), cmd.getNuovSoglieBonifico());
+    //     cc.impostaSoglieBonifico(cmd.getIdContoCorrente(), cmd.getNuovSoglieBonifico());
     //     ccOutputPort.salva(cc);
     //     log.info("Comando [impostaSoglieBonifico] terminato...");
     // }

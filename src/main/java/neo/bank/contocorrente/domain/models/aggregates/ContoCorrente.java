@@ -2,8 +2,8 @@ package neo.bank.contocorrente.domain.models.aggregates;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -18,6 +18,7 @@ import neo.bank.contocorrente.domain.models.vo.DataChiusura;
 import neo.bank.contocorrente.domain.models.vo.IdCliente;
 import neo.bank.contocorrente.domain.models.vo.IdContoCorrente;
 import neo.bank.contocorrente.domain.models.vo.SoglieBonifico;
+import neo.bank.contocorrente.domain.services.AnagraficaClienteService;
 import neo.bank.contocorrente.domain.services.GeneratoreCoordinateBancarieService;
 import neo.bank.contocorrente.domain.services.GeneratoreIdService;
 
@@ -35,10 +36,13 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
     private DataApertura dataApertura;
     private double saldo;
     private DataChiusura dataChiusura;
-    private Map<IdCliente, Boolean> clientiAssociati = new HashMap<>();
+    private List<IdCliente> clientiAssociati = new ArrayList<>();
 
-    public static ContoCorrente apri(GeneratoreIdService generatoreIdService, GeneratoreCoordinateBancarieService generatoreCoordinateBancarie, IdCliente idCliente) {
+    public static ContoCorrente apri(GeneratoreIdService generatoreIdService, GeneratoreCoordinateBancarieService generatoreCoordinateBancarie, AnagraficaClienteService anagraficaClienteService, IdCliente idCliente) {
         
+        if(!anagraficaClienteService.richiediVerificaCliente(idCliente)) {
+            throw new BusinessRuleException(String.format("Il cliente [%s] per cui e' stato richiesta la creazione del conto non esiste", idCliente.id()));
+        }
         IdContoCorrente idConto =generatoreIdService.genera();
         CoordinateBancarie coordinateBancarie = generatoreCoordinateBancarie.genera();
         SoglieBonifico soglieBonifico = new SoglieBonifico(5000, 1500);
@@ -52,7 +56,7 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
 
 
     private void apply(ContoCorrenteAperto event) {
-        this.clientiAssociati.put(event.idCliente(), true);
+        this.clientiAssociati.add(event.idCliente());
         this.coordinateBancarie = event.coordinateBancarie();
         this.dataApertura = event.dataApertura();
         this.idContoCorrente = event.idContoCorrente();
@@ -93,7 +97,7 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
     }
 
      private void verificaAccessoCliente(IdCliente idCliente) {
-        if( !clientiAssociati.keySet().stream().anyMatch(c -> c.id().equals(idCliente.id()))){
+        if( !clientiAssociati.stream().anyMatch(c -> c.id().equals(idCliente.id()))){
             throw new BusinessRuleException(String.format("Accesso al conto non autorizzato per il cliente [%s]", idCliente.id()));
         }
     }
