@@ -51,6 +51,8 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
         double saldo = 0;
         ContoCorrente cc = new ContoCorrente();
         cc.idContoCorrente = idConto;
+        cc.coordinateBancarie = coordinateBancarie;
+        
         cc.events(new ContoCorrenteAperto(idConto, idCliente, coordinateBancarie, soglieBonifico, dataApertura, saldo));
         return cc;
     }

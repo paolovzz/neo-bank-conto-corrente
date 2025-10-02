@@ -7,6 +7,7 @@ import neo.bank.contocorrente.application.ports.input.commands.CreaContoCorrente
 import neo.bank.contocorrente.application.ports.input.commands.ImpostaSoglieBonificoCmd;
 import neo.bank.contocorrente.application.ports.output.ContoCorrenteOutputPort;
 import neo.bank.contocorrente.application.ports.output.ErrorEventsPublisherPort;
+import neo.bank.contocorrente.application.ports.output.IbanProjectionRepositoryPort;
 import neo.bank.contocorrente.domain.models.aggregates.ContoCorrente;
 import neo.bank.contocorrente.domain.models.vo.IdContoCorrente;
 import neo.bank.contocorrente.domain.services.AnagraficaClienteService;
@@ -29,12 +30,13 @@ public class ContoCorrenteUseCase {
     @Inject
     private ContoCorrenteOutputPort ccOutputPort;
     @Inject
-    private ErrorEventsPublisherPort errorEventsPublisherPort;
+    private IbanProjectionRepositoryPort ibanProjRepoPort;
 
     public void creaContoCorrente(CreaContoCorrenteCmd cmd) {
         log.info("Comando [creaContoCorrente] in esecuzione...");
         ContoCorrente cc = ContoCorrente.apri(generatoreIdService, generatoreCoordinateBancarie, anagraficaClienteService, cmd.getIdCliente());
         ccOutputPort.salva(cc);
+        ibanProjRepoPort.salva(cc.getCoordinateBancarie().iban(), cc.getIdContoCorrente());
         log.info("Comando [creaContoCorrente] terminato...");
     }
 
