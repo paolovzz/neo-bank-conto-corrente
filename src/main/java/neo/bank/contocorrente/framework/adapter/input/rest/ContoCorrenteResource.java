@@ -13,12 +13,15 @@ import jakarta.ws.rs.core.Response;
 import neo.bank.contocorrente.application.ContoCorrenteUseCase;
 import neo.bank.contocorrente.application.ports.input.commands.CreaContoCorrenteCmd;
 import neo.bank.contocorrente.application.ports.input.commands.ImpostaSoglieBonificoCmd;
+import neo.bank.contocorrente.application.ports.input.commands.InviaBonificoCmd;
 import neo.bank.contocorrente.domain.models.aggregates.ContoCorrente;
+import neo.bank.contocorrente.domain.models.vo.Iban;
 import neo.bank.contocorrente.domain.models.vo.IdCliente;
 import neo.bank.contocorrente.domain.models.vo.IdContoCorrente;
 import neo.bank.contocorrente.domain.models.vo.SoglieBonifico;
 import neo.bank.contocorrente.framework.adapter.input.rest.request.CreaContoCorrenteRequest;
 import neo.bank.contocorrente.framework.adapter.input.rest.request.ImpostaSoglieBonificoRequest;
+import neo.bank.contocorrente.framework.adapter.input.rest.request.InviaBonificoRequest;
 import neo.bank.contocorrente.framework.adapter.input.rest.response.ContoCorrenteInfoResponse;
 
 @Path("/cc")
@@ -53,4 +56,11 @@ public class ContoCorrenteResource {
         return Response.noContent().build();
     }
     
+    @Path("/{id}/invia-bonifico")
+    @POST
+    @Produces(value = MediaType.APPLICATION_JSON)
+    public Response inviaBonifico(@PathParam(value = "id") String idContoCorrente, InviaBonificoRequest request) {
+        app.inviaBonifico(new InviaBonificoCmd(new IdCliente(request.getIdCliente()), new IdContoCorrente(idContoCorrente), request.getImporto(), request.getCausale(), new Iban(request.getIbanDestinatario())));
+        return Response.accepted().build();
+    }
 }

@@ -5,6 +5,7 @@ import java.util.List;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.RequiredArgsConstructor;
+import neo.bank.contocorrente.application.exceptions.ContoCorrenteNonTrovatoException;
 import neo.bank.contocorrente.application.ports.output.ContoCorrenteOutputPort;
 import neo.bank.contocorrente.application.ports.output.ContoCorrenteRepositoryPort;
 import neo.bank.contocorrente.application.ports.output.EventsPublisherPort;
@@ -29,7 +30,11 @@ public class ContoCorrentOutputAdapter  implements ContoCorrenteOutputPort{
 
     @Override
     public ContoCorrente recuperaDaId(IdContoCorrente idContoCorrente) {
-       return ccRepo.findById(idContoCorrente.id());
+        ContoCorrente cc = ccRepo.findById(idContoCorrente.id());
+        if(cc == null) {
+            throw new ContoCorrenteNonTrovatoException(idContoCorrente.id());
+        }
+       return cc;
     }
     
 }

@@ -12,7 +12,7 @@ public record ContoCorrenteAperto(
         CoordinateBancarie coordinateBancarie,
         SoglieBonifico soglieBonifico,
         DataApertura dataApertura,
-        double saldo) implements EventPayload {
+        double saldoDisponibile, double saldoContabile) implements EventPayload {
 
     @Override
     public String eventType() {

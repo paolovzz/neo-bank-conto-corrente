@@ -7,11 +7,13 @@ import neo.bank.contocorrente.domain.models.aggregates.ContoCorrente;
 public class ContoCorrenteInfoResponse {
    
     private String iban;
-    private double saldo;
+    private double saldoDisponibile;
+    private double saldoContabile;
 
     public ContoCorrenteInfoResponse(ContoCorrente cc) {
         this.iban = cc.getCoordinateBancarie().iban().codice();
-        this.saldo = cc.getSaldo();
+        this.saldoDisponibile = cc.getSaldoDisponibile();
+        this.saldoContabile = cc.getSaldoContabile();
     }
 
     

@@ -12,7 +12,7 @@ public class ContoCorrenteApertoConverter implements IntegrationEventConverter<C
     public IEContoCorrenteAperto convert(ContoCorrenteAperto ev) {
 
         CoordinateBancarie coordinate = ev.coordinateBancarie();
-        return new IEContoCorrenteAperto(ev.idContoCorrente().id(), ev.idCliente().id(), coordinate.numeroConto().numero(), coordinate.iban().codice(), coordinate.bic().codice(), coordinate.cab().codice(), coordinate.abi().codice(), ev.soglieBonifico().sogliaMensile(), ev.soglieBonifico().sogliaGiornaliera(), ev.dataApertura().dataOra(), ev.saldo());
+        return new IEContoCorrenteAperto(ev.idContoCorrente().id(), ev.idCliente().id(), coordinate.numeroConto().numero(), coordinate.iban().codice(), coordinate.bic().codice(), coordinate.cab().codice(), coordinate.abi().codice(), ev.soglieBonifico().sogliaMensile(), ev.soglieBonifico().sogliaGiornaliera(), ev.dataApertura().dataOra(), ev.saldoDisponibile(), ev.saldoContabile());
     }
 
     @Override
