@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import neo.bank.contocorrente.application.ContoCorrenteUseCase;
 import neo.bank.contocorrente.application.ports.input.commands.AggiornaSaldoCmd;
 import neo.bank.contocorrente.application.ports.input.commands.CreaContoCorrenteCmd;
+import neo.bank.contocorrente.application.ports.input.commands.RipristinaSaldoCmd;
 import neo.bank.contocorrente.domain.models.vo.IdOperazione;
 
 @ApplicationScoped
@@ -32,6 +33,7 @@ public class OperazioneConsumer {
 
     private static final String EVENT_OWNER = "OPERAZIONE";
     private static final String OPERAZIONE_CONCLUSA_EVENT_NAME = "OperazioneConclusa";
+    private static final String OPERAZIONE_ANNULLATA_EVENT_NAME = "OperazioneAnnullata";
 
     @Incoming("operazione-notifications")
     @Blocking
@@ -46,6 +48,11 @@ public class OperazioneConsumer {
                 case OPERAZIONE_CONCLUSA_EVENT_NAME:{
                     String idOperazione =  (String) metadata.getKey();
                     app.aggiornaSaldo(new AggiornaSaldoCmd(new IdOperazione(idOperazione)));
+                    break;
+                }
+                case OPERAZIONE_ANNULLATA_EVENT_NAME:{
+                    String idOperazione =  (String) metadata.getKey();
+                    app.ripristinaSaldo(new RipristinaSaldoCmd(new IdOperazione(idOperazione)));
                     break;
                 }
                 default:
