@@ -48,7 +48,7 @@ public class ContoCorrenteUseCase {
 
     public void creaContoCorrente(CreaContoCorrenteCmd cmd) {
         log.info("Comando [creaContoCorrente] in esecuzione...");
-        ContoCorrente cc = ContoCorrente.apri(generatoreIdService, generatoreCoordinateBancarie, anagraficaClienteService, cmd.getIdCliente());
+        ContoCorrente cc = ContoCorrente.apri(generatoreIdService, generatoreCoordinateBancarie, anagraficaClienteService, cmd.getUsernameCliente());
         ccOutputPort.salva(cc);
         ibanProjRepoPort.salva(cc.getCoordinateBancarie().iban(), cc.getIdContoCorrente());
         log.info("Comando [creaContoCorrente] terminato...");
@@ -64,7 +64,7 @@ public class ContoCorrenteUseCase {
     public void impostaSoglieBonifico(ImpostaSoglieBonificoCmd cmd) {
         log.info("Comando [impostaSoglieBonifico] in esecuzione...");
         ContoCorrente cc = ccOutputPort.recuperaDaId(cmd.getIdContoCorrente());
-        cc.impostaSoglieBonifico(cmd.getIdCliente(), cmd.getNuovSoglieBonifico());
+        cc.impostaSoglieBonifico(cmd.getUsernameCliente(), cmd.getNuovSoglieBonifico());
         ccOutputPort.salva(cc);
         log.info("Comando [impostaSoglieBonifico] terminato...");
     }
@@ -74,7 +74,7 @@ public class ContoCorrenteUseCase {
 
 
         ContoCorrente cc = ccOutputPort.recuperaDaId(cmd.getIdContoCorrente());
-        cc.predisponiBonifico(cmd.getIbanDestinatario(), cmd.getCausale(), cmd.getImporto(), cmd.getIdCliente(), transazioniService);
+        cc.predisponiBonifico(cmd.getIbanDestinatario(), cmd.getCausale(), cmd.getImporto(), cmd.getUsernameCliente(), transazioniService);
         ccOutputPort.salva(cc);
         log.info("Comando [inviaBonifico] terminato...");
     }

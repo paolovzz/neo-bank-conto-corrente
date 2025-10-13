@@ -6,7 +6,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.WebApplicationException;
 import lombok.extern.slf4j.Slf4j;
-import neo.bank.contocorrente.domain.models.vo.IdCliente;
+import neo.bank.contocorrente.domain.models.vo.UsernameCliente;
 import neo.bank.contocorrente.domain.services.AnagraficaClienteService;
 import neo.bank.contocorrente.framework.adapter.output.rest.AnagraficaClienteRestClient;
 
@@ -23,10 +23,10 @@ public class AnagraficaClienteServiceImpl implements AnagraficaClienteService{
     }
 
     @Override
-    public boolean richiediVerificaCliente(IdCliente idCliente) {
-       log.info("Chiedo verifica riguarda l'esistenza del cliente [{}]", idCliente.id());
+    public boolean richiediVerificaCliente(UsernameCliente usernameCliente) {
+       log.info("Chiedo verifica riguarda l'esistenza del cliente [{}]", usernameCliente.username());
         try {
-            client.recuperaCliente(idCliente.id());
+            client.recuperaCliente(usernameCliente.username());
             log.info("Verifica conclusa positivamente");
             return true;
         } catch(WebApplicationException ex) {

@@ -8,7 +8,7 @@ import lombok.Value;
 @Value
 public class IEContoCorrenteAperto implements Serializable {
     private String idContoCorrente;
-    private String idCliente;
+    private String usernameCliente;
     private String numeroConto;
     private String iban;
     private String bic;

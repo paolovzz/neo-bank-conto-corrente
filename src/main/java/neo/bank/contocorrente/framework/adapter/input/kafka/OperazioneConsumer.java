@@ -17,7 +17,6 @@ import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import neo.bank.contocorrente.application.ContoCorrenteUseCase;
 import neo.bank.contocorrente.application.ports.input.commands.AggiornaSaldoCmd;
-import neo.bank.contocorrente.application.ports.input.commands.CreaContoCorrenteCmd;
 import neo.bank.contocorrente.application.ports.input.commands.RipristinaSaldoCmd;
 import neo.bank.contocorrente.domain.models.vo.IdOperazione;
 

@@ -4,7 +4,7 @@ import lombok.Value;
 
 @Value
 public class ImpostaSoglieBonificoRequest {
-    private String idCliente;
+    private String usernameCliente;
     private int sogliaMensile;
     private int sogliaGiornaliera ;
 }

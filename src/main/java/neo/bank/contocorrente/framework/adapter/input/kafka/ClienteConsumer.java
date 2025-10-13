@@ -17,7 +17,7 @@ import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import neo.bank.contocorrente.application.ContoCorrenteUseCase;
 import neo.bank.contocorrente.application.ports.input.commands.CreaContoCorrenteCmd;
-import neo.bank.contocorrente.domain.models.vo.IdCliente;
+import neo.bank.contocorrente.domain.models.vo.UsernameCliente;
 
 @ApplicationScoped
 @Slf4j
@@ -45,8 +45,9 @@ public class ClienteConsumer {
             JsonNode json = convertToJsonNode(payload);
             switch (eventType) {
                 case CLIENTE_CREATO_EVENT_NAME:{
-                    String idCliente = json.get("idCliente").asText();
-                    app.creaContoCorrente( new CreaContoCorrenteCmd(new IdCliente(idCliente)));
+                    String usernameCliente = json.get("usernameCliente").asText();
+                    log.info("usernameCliente:{}", usernameCliente);
+                    app.creaContoCorrente( new CreaContoCorrenteCmd(new UsernameCliente(usernameCliente)));
                     break;
                 }
                 default:

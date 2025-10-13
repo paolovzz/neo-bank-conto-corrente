@@ -1,8 +1,8 @@
 package neo.bank.contocorrente.domain.services;
 
-import neo.bank.contocorrente.domain.models.vo.IdCliente;
+import neo.bank.contocorrente.domain.models.vo.UsernameCliente;
 
 public interface AnagraficaClienteService {
     
-    boolean richiediVerificaCliente(IdCliente idCliente);
+    boolean richiediVerificaCliente(UsernameCliente idCliente);
 }

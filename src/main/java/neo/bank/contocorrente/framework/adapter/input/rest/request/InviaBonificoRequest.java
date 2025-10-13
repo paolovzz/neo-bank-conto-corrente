@@ -4,7 +4,7 @@ import lombok.Value;
 
 @Value
 public class InviaBonificoRequest {
-    private String idCliente;
+    private String usernameCliente;
     private String ibanDestinatario;
     private double importo;
     private String causale;
