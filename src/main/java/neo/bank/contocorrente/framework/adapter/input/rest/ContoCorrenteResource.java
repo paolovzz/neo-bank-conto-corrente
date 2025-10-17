@@ -41,6 +41,16 @@ public class ContoCorrenteResource {
         return Response.ok(bodyResponse).build();
     }
 
+    @Path("/iban/{iban}")
+    @GET
+    @Produces(value = MediaType.APPLICATION_JSON)
+    public Response recuperaContoCorrenteDaIban(@PathParam(value = "iban") String iban) {
+
+        ContoCorrente contoCorrente = app.recuperaContoCorrenteDaIban(new Iban(iban));
+        ContoCorrenteInfoResponse bodyResponse = new ContoCorrenteInfoResponse(contoCorrente);
+        return Response.ok(bodyResponse).build();
+    }
+
     @POST
     @Produces(value = MediaType.APPLICATION_JSON)
     public Response creaContoCorrente(CreaContoCorrenteRequest cmd) {

@@ -61,6 +61,14 @@ public class ContoCorrenteUseCase {
         return contoCorrente;
     }
 
+    public ContoCorrente recuperaContoCorrenteDaIban(Iban iban) {
+        log.info("Recupero info contoCorrente per iban [{}]", iban.codice());
+        IdContoCorrente idContoCorrente = ibanProjRepoPort.recuperaDaIban(iban);
+        ContoCorrente contoCorrente = ccOutputPort.recuperaDaId(idContoCorrente);
+        log.info("Recupero terminato");
+        return contoCorrente;
+    }
+
     public void impostaSoglieBonifico(ImpostaSoglieBonificoCmd cmd) {
         log.info("Comando [impostaSoglieBonifico] in esecuzione...");
         ContoCorrente cc = ccOutputPort.recuperaDaId(cmd.getIdContoCorrente());
