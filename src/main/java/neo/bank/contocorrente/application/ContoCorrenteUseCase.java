@@ -5,8 +5,9 @@ import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import neo.bank.contocorrente.application.ports.input.commands.AggiornaSaldoCmd;
 import neo.bank.contocorrente.application.ports.input.commands.CreaContoCorrenteCmd;
-import neo.bank.contocorrente.application.ports.input.commands.ImpostaSoglieBonificoCmd;
-import neo.bank.contocorrente.application.ports.input.commands.InviaBonificoCmd;
+import neo.bank.contocorrente.application.ports.input.commands.ImpostaSogliaBonificoGiornalieraCmd;
+import neo.bank.contocorrente.application.ports.input.commands.ImpostaSogliaBonificoMensileCmd;
+import neo.bank.contocorrente.application.ports.input.commands.PredisponiBonificoCmd;
 import neo.bank.contocorrente.application.ports.input.commands.RipristinaSaldoCmd;
 import neo.bank.contocorrente.application.ports.output.ContoCorrenteOutputPort;
 import neo.bank.contocorrente.application.ports.output.IbanProjectionRepositoryPort;
@@ -69,22 +70,31 @@ public class ContoCorrenteUseCase {
         return contoCorrente;
     }
 
-    public void impostaSoglieBonifico(ImpostaSoglieBonificoCmd cmd) {
-        log.info("Comando [impostaSoglieBonifico] in esecuzione...");
-        ContoCorrente cc = ccOutputPort.recuperaDaId(cmd.getIdContoCorrente());
-        cc.impostaSoglieBonifico(cmd.getUsernameCliente(), cmd.getNuovSoglieBonifico());
+    public void impostaSogliaBonificoGiornaliera(ImpostaSogliaBonificoGiornalieraCmd cmd) {
+        log.info("Comando [impostaSogliaBonificoGiornaliera] in esecuzione...");
+        IdContoCorrente idContoCorrente = ibanProjRepoPort.recuperaDaIban(cmd.getIban());
+        ContoCorrente cc = ccOutputPort.recuperaDaId(idContoCorrente);
+        cc.impostaSogliaBonificoGiornaliero(cmd.getUsernameCliente(), cmd.getNuovaSogliaBonifico());
         ccOutputPort.salva(cc);
-        log.info("Comando [impostaSoglieBonifico] terminato...");
+        log.info("Comando [impostaSogliaBonificoGiornaliera] terminato...");
     }
 
-    public void inviaBonifico(InviaBonificoCmd cmd) {
-        log.info("Comando [inviaBonifico] in esecuzione...");
+    public void impostaSogliaBonificoMensile(ImpostaSogliaBonificoMensileCmd cmd) {
+        log.info("Comando [impostaSogliaBonificoMensile] in esecuzione...");
+        IdContoCorrente idContoCorrente = ibanProjRepoPort.recuperaDaIban(cmd.getIban());
+        ContoCorrente cc = ccOutputPort.recuperaDaId(idContoCorrente);
+        cc.impostaSogliaBonificoMensile(cmd.getUsernameCliente(), cmd.getNuovaSogliaBonifico());
+        ccOutputPort.salva(cc);
+        log.info("Comando [impostaSogliaBonificoMensile] terminato...");
+    }
 
-
-        ContoCorrente cc = ccOutputPort.recuperaDaId(cmd.getIdContoCorrente());
+    public void predisponiBonifico(PredisponiBonificoCmd cmd) {
+        log.info("Comando [predisponiBonifico] in esecuzione...");
+        IdContoCorrente idContoCorrente = ibanProjRepoPort.recuperaDaIban(cmd.getIbanMittente());
+        ContoCorrente cc = ccOutputPort.recuperaDaId(idContoCorrente);
         cc.predisponiBonifico(cmd.getIbanDestinatario(), cmd.getCausale(), cmd.getImporto(), cmd.getUsernameCliente(), transazioniService);
         ccOutputPort.salva(cc);
-        log.info("Comando [inviaBonifico] terminato...");
+        log.info("Comando [predisponiBonifico] terminato...");
     }
 
     public void aggiornaSaldo(AggiornaSaldoCmd cmd) {

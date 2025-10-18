@@ -3,8 +3,8 @@ package neo.bank.contocorrente.framework.adapter.input.rest.request;
 import lombok.Value;
 
 @Value
-public class ImpostaSoglieBonificoRequest {
+public class ImpostaSogliaBonificoRequest {
+    private String iban;
     private String usernameCliente;
-    private int sogliaMensile;
-    private int sogliaGiornaliera ;
+    private int nuovaSoglia;
 }

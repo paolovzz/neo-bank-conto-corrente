@@ -15,15 +15,15 @@ import neo.bank.contocorrente.domain.models.events.ContoCorrenteAperto;
 import neo.bank.contocorrente.domain.models.events.EventPayload;
 import neo.bank.contocorrente.domain.models.events.SaldoContabileAggiornato;
 import neo.bank.contocorrente.domain.models.events.SaldoDisponibileAggiornato;
-import neo.bank.contocorrente.domain.models.events.SoglieBonificoImpostate;
+import neo.bank.contocorrente.domain.models.events.SogliaBonificoGiornalieraImpostata;
+import neo.bank.contocorrente.domain.models.events.SogliaBonificoMensileImpostata;
 import neo.bank.contocorrente.domain.models.vo.CoordinateBancarie;
 import neo.bank.contocorrente.domain.models.vo.DataApertura;
 import neo.bank.contocorrente.domain.models.vo.DataChiusura;
 import neo.bank.contocorrente.domain.models.vo.Iban;
-import neo.bank.contocorrente.domain.models.vo.UsernameCliente;
 import neo.bank.contocorrente.domain.models.vo.IdContoCorrente;
-import neo.bank.contocorrente.domain.models.vo.SoglieBonifico;
 import neo.bank.contocorrente.domain.models.vo.SommaBonificiUscita;
+import neo.bank.contocorrente.domain.models.vo.UsernameCliente;
 import neo.bank.contocorrente.domain.services.AnagraficaClienteService;
 import neo.bank.contocorrente.domain.services.GeneratoreCoordinateBancarieService;
 import neo.bank.contocorrente.domain.services.GeneratoreIdService;
@@ -39,7 +39,8 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
     public static final String AGGREGATE_NAME = "CONTO_CORRENTE";
     private IdContoCorrente idContoCorrente;
     private CoordinateBancarie coordinateBancarie;
-    private SoglieBonifico soglieBonifico;
+    private int sogliaBonificoGiornaliera = 1000;
+    private int sogliaBonificoMensile = 3000;
     private DataApertura dataApertura;
     private double saldoContabile;
     private double saldoDisponibile;
@@ -53,36 +54,47 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
         }
         IdContoCorrente idConto =generatoreIdService.genera();
         CoordinateBancarie coordinateBancarie = generatoreCoordinateBancarie.genera();
-        SoglieBonifico soglieBonifico = new SoglieBonifico(5000, 1500);
         DataApertura dataApertura = new DataApertura(LocalDateTime.now(ZoneOffset.UTC));
         double saldo = 0;
         ContoCorrente cc = new ContoCorrente();
         cc.idContoCorrente = idConto;
         cc.coordinateBancarie = coordinateBancarie;
         
-        cc.events(new ContoCorrenteAperto(idConto, usernameCliente, coordinateBancarie, soglieBonifico, dataApertura, saldo, saldo));
+        cc.events(new ContoCorrenteAperto(idConto, usernameCliente, coordinateBancarie, dataApertura, saldo, saldo));
         return cc;
     }
 
-    public void impostaSoglieBonifico(UsernameCliente usernameClienteRichiedente, SoglieBonifico nuoveSoglieBonifico) {
+    public void impostaSogliaBonificoGiornaliero(UsernameCliente usernameClienteRichiedente, int nuovaSogliaBonifico) {
         verificaAccessoCliente(usernameClienteRichiedente);
         verificaContoChiuso();
-        events(new SoglieBonificoImpostate(nuoveSoglieBonifico));
+        if(nuovaSogliaBonifico > sogliaBonificoMensile) {
+            throw new BusinessRuleException(String.format("Soglia bonifici giornaliera non puo' essere maggiore della soglia bonifici mensile"));  
+        }
+        events(new SogliaBonificoGiornalieraImpostata(nuovaSogliaBonifico));
     }
 
-    public void predisponiBonifico(Iban ibanDestinatario, String causale, double importo, UsernameCliente idClientRichiedente, TransazioniService transazioniService) {
+    public void impostaSogliaBonificoMensile(UsernameCliente usernameClienteRichiedente, int nuovaSogliaBonifico) {
+        verificaAccessoCliente(usernameClienteRichiedente);
+        verificaContoChiuso();
+        if(nuovaSogliaBonifico < sogliaBonificoGiornaliera) {
+            throw new BusinessRuleException(String.format("Soglia bonifici mensile non puo' essere maggiore della soglia bonifici giornaliera"));  
+        }
+        events(new SogliaBonificoMensileImpostata(nuovaSogliaBonifico));
+    }
+
+    public void predisponiBonifico(Iban ibanDestinatario, String causale, double importo, UsernameCliente clienteRichiedente, TransazioniService transazioniService) {
         
-        verificaAccessoCliente(idClientRichiedente);
+        verificaAccessoCliente(clienteRichiedente);
         verificaContoChiuso();
         double importAbs = Math.abs(importo);
         if(Math.abs(saldoDisponibile) < importAbs) {
           throw new BusinessRuleException(String.format("Importo [%s] non disponibile", importAbs));  
         }
         SommaBonificiUscita sommaBonificiUscita = transazioniService.richiediTotaleBonificiUscita(coordinateBancarie.iban());
-        if(soglieBonifico.sogliaGiornaliera() < sommaBonificiUscita.getSommaOdierna() + importAbs) {
+        if(sogliaBonificoGiornaliera < sommaBonificiUscita.getSommaOdierna() + importAbs) {
             throw new BusinessRuleException("Impossibile inviare il bonifico: raggiunto il limite giornaliero");  
         }
-        if(soglieBonifico.sogliaMensile() < sommaBonificiUscita.getSommaMensile() + importAbs) {
+        if(sogliaBonificoMensile < sommaBonificiUscita.getSommaMensile() + importAbs) {
             throw new BusinessRuleException("Impossibile inviare il bonifico: raggiunto il limite mensile");  
         }
         events(new BonificoPredisposto(coordinateBancarie.iban(), ibanDestinatario, importo * (-1), causale));
@@ -116,11 +128,14 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
         this.idContoCorrente = event.idContoCorrente();
         this.saldoDisponibile = event.saldoDisponibile();
         this.saldoContabile = event.saldoDisponibile();
-        this.soglieBonifico = event.soglieBonifico();
     }
 
-    private void apply(SoglieBonificoImpostate event) {
-        soglieBonifico = event.soglieBonifico();
+    private void apply(SogliaBonificoGiornalieraImpostata event) {
+        sogliaBonificoGiornaliera = event.nuovaSogliaBonifico();
+    }
+
+    private void apply(SogliaBonificoMensileImpostata event) {
+        sogliaBonificoMensile = event.nuovaSogliaBonifico();
     }
 
     private void apply(BonificoPredisposto event) {
@@ -139,7 +154,8 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
     public void apply(EventPayload event) {
         switch (event) {
             case ContoCorrenteAperto ev -> apply((ContoCorrenteAperto) ev);
-            case SoglieBonificoImpostate ev -> apply((SoglieBonificoImpostate) ev);
+            case SogliaBonificoGiornalieraImpostata ev -> apply((SogliaBonificoGiornalieraImpostata) ev);
+            case SogliaBonificoMensileImpostata ev -> apply((SogliaBonificoMensileImpostata) ev);
             case BonificoPredisposto ev -> apply((BonificoPredisposto) ev);
             case SaldoContabileAggiornato ev -> apply((SaldoContabileAggiornato) ev);
             case SaldoDisponibileAggiornato ev -> apply((SaldoDisponibileAggiornato) ev);

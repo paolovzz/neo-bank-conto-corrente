@@ -5,7 +5,6 @@ import java.io.Serializable;
 import lombok.Value;
 
 @Value
-public class IESoglieBonificoImpostate implements Serializable {
-    private int sogliaMensile;
-    private int sogliaGiornaliera;
+public class IESogliaBonificoGiornalieraImpostata implements Serializable {
+    private int sogliaBonificoGiornaliera;
 }

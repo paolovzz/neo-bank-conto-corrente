@@ -14,8 +14,6 @@ public class IEContoCorrenteAperto implements Serializable {
     private String bic;
     private String cab;
     private String abi;
-    private int sogliaMensile;
-    private int sogliaGiornaliera;
     private LocalDateTime dataApertura;
     private double saldoDisponibile;
     private double sadoContabile;

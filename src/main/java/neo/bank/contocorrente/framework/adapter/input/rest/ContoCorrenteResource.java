@@ -12,15 +12,15 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import neo.bank.contocorrente.application.ContoCorrenteUseCase;
 import neo.bank.contocorrente.application.ports.input.commands.CreaContoCorrenteCmd;
-import neo.bank.contocorrente.application.ports.input.commands.ImpostaSoglieBonificoCmd;
-import neo.bank.contocorrente.application.ports.input.commands.InviaBonificoCmd;
+import neo.bank.contocorrente.application.ports.input.commands.ImpostaSogliaBonificoGiornalieraCmd;
+import neo.bank.contocorrente.application.ports.input.commands.ImpostaSogliaBonificoMensileCmd;
+import neo.bank.contocorrente.application.ports.input.commands.PredisponiBonificoCmd;
 import neo.bank.contocorrente.domain.models.aggregates.ContoCorrente;
 import neo.bank.contocorrente.domain.models.vo.Iban;
-import neo.bank.contocorrente.domain.models.vo.UsernameCliente;
 import neo.bank.contocorrente.domain.models.vo.IdContoCorrente;
-import neo.bank.contocorrente.domain.models.vo.SoglieBonifico;
+import neo.bank.contocorrente.domain.models.vo.UsernameCliente;
 import neo.bank.contocorrente.framework.adapter.input.rest.request.CreaContoCorrenteRequest;
-import neo.bank.contocorrente.framework.adapter.input.rest.request.ImpostaSoglieBonificoRequest;
+import neo.bank.contocorrente.framework.adapter.input.rest.request.ImpostaSogliaBonificoRequest;
 import neo.bank.contocorrente.framework.adapter.input.rest.request.InviaBonificoRequest;
 import neo.bank.contocorrente.framework.adapter.input.rest.response.ContoCorrenteInfoResponse;
 
@@ -31,17 +31,7 @@ public class ContoCorrenteResource {
     @Inject
     private ContoCorrenteUseCase app;
 
-    @Path("/{id}")
-    @GET
-    @Produces(value = MediaType.APPLICATION_JSON)
-    public Response recuperaContoCorrenteDaId(@PathParam(value = "id") String idContoCorrente) {
-
-        ContoCorrente contoCorrente = app.recuperaContoCorrenteDaId(new IdContoCorrente(idContoCorrente));
-        ContoCorrenteInfoResponse bodyResponse = new ContoCorrenteInfoResponse(contoCorrente);
-        return Response.ok(bodyResponse).build();
-    }
-
-    @Path("/iban/{iban}")
+    @Path("/{iban}")
     @GET
     @Produces(value = MediaType.APPLICATION_JSON)
     public Response recuperaContoCorrenteDaIban(@PathParam(value = "iban") String iban) {
@@ -58,19 +48,27 @@ public class ContoCorrenteResource {
         return Response.ok().build();
     }
 
-    @Path("/{id}/soglie-bonifici")
+    @Path("/soglia-bonifico-giornaliera")
     @PUT
     @Produces(value = MediaType.APPLICATION_JSON)
-    public Response impostaSoglieBonifici(@PathParam(value = "id") String idContoCorrente, ImpostaSoglieBonificoRequest request) {
-        app.impostaSoglieBonifico(new ImpostaSoglieBonificoCmd(new UsernameCliente(request.getUsernameCliente()), new IdContoCorrente(idContoCorrente), new SoglieBonifico(request.getSogliaMensile(), request.getSogliaGiornaliera())));
+    public Response impostaSogliaBonificoGiornaliera( ImpostaSogliaBonificoRequest request) {
+        app.impostaSogliaBonificoGiornaliera(new ImpostaSogliaBonificoGiornalieraCmd(new UsernameCliente(request.getUsernameCliente()), new Iban(request.getIban()), request.getNuovaSoglia()));
+        return Response.noContent().build();
+    }
+
+    @Path("/soglia-bonifico-mensile")
+    @PUT
+    @Produces(value = MediaType.APPLICATION_JSON)
+    public Response impostaSogliaBonificoMensile(ImpostaSogliaBonificoRequest request) {
+        app.impostaSogliaBonificoMensile(new ImpostaSogliaBonificoMensileCmd(new UsernameCliente(request.getUsernameCliente()), new Iban(request.getIban()), request.getNuovaSoglia()));
         return Response.noContent().build();
     }
     
-    @Path("/{id}/invia-bonifico")
+    @Path("/predisponi-bonifico")
     @POST
     @Produces(value = MediaType.APPLICATION_JSON)
-    public Response inviaBonifico(@PathParam(value = "id") String idContoCorrente, InviaBonificoRequest request) {
-        app.inviaBonifico(new InviaBonificoCmd(new UsernameCliente(request.getUsernameCliente()), new IdContoCorrente(idContoCorrente), request.getImporto(), request.getCausale(), new Iban(request.getIbanDestinatario())));
+    public Response inviaBonifico(InviaBonificoRequest request) {
+        app.predisponiBonifico(new PredisponiBonificoCmd(new UsernameCliente(request.getUsernameCliente()), new Iban(request.getIbanMittente()), request.getImporto(), request.getCausale(), new Iban(request.getIbanDestinatario())));
         return Response.accepted().build();
     }
 }
