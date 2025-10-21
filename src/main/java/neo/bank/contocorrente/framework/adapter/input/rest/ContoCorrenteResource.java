@@ -8,6 +8,7 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import neo.bank.contocorrente.application.ContoCorrenteUseCase;
@@ -39,6 +40,19 @@ public class ContoCorrenteResource {
         ContoCorrente contoCorrente = app.recuperaContoCorrenteDaIban(new Iban(iban));
         ContoCorrenteInfoResponse bodyResponse = new ContoCorrenteInfoResponse(contoCorrente);
         return Response.ok(bodyResponse).build();
+    }
+
+    @Path("/{iban}/verifica")
+    @GET
+    @Produces(value = MediaType.APPLICATION_JSON)
+    public Response verificaContoCorrente(@PathParam(value = "iban") String iban, @QueryParam("cliente") String cliente) {
+
+        ContoCorrente contoCorrente = app.recuperaContoCorrenteDaIban(new Iban(iban));
+        if(contoCorrente.getIntestatario().equals(new UsernameCliente(cliente))) {
+            return Response.ok().build();
+        } else {
+            return Response.status(403).build();
+        }
     }
 
     @POST

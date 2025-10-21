@@ -23,7 +23,7 @@ import neo.bank.contocorrente.domain.models.vo.UsernameCliente;
 
 @ApplicationScoped
 @Slf4j
-public class CartaPrepagataConsumer {
+public class CartaConsumer {
 
     @Inject
     private ObjectMapper mapper;
@@ -31,8 +31,8 @@ public class CartaPrepagataConsumer {
     @Inject
     private ContoCorrenteUseCase app;
 
-    private static final String EVENT_OWNER = "CARTA_PREPAGATA";
-    private static final String CARTA_PREPAGATA_CREATA_EVENT_NAME = "CartaPrepagataCreato";
+    private static final String EVENT_OWNER = "CARTA";
+    private static final String CARTA_CREATA_EVENT_NAME = "CartaCreata";
 
     @Incoming("carta-notifications")
     @Blocking
@@ -46,7 +46,7 @@ public class CartaPrepagataConsumer {
         if (aggregateName.equals(EVENT_OWNER)) {
             JsonNode json = convertToJsonNode(payload);
             switch (eventType) {
-                case CARTA_PREPAGATA_CREATA_EVENT_NAME:{
+                case CARTA_CREATA_EVENT_NAME:{
                     String usernameCliente = json.get("usernameCliente").asText();
                     String numeroCarta = json.get("numeroCarta").asText();
                     String iban = json.get("iban").asText();
