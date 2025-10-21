@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import neo.bank.contocorrente.domain.exceptions.BusinessRuleException;
 import neo.bank.contocorrente.domain.models.events.BonificoPredisposto;
+import neo.bank.contocorrente.domain.models.events.CartaAssociata;
 import neo.bank.contocorrente.domain.models.events.ContoCorrenteAperto;
 import neo.bank.contocorrente.domain.models.events.EventPayload;
 import neo.bank.contocorrente.domain.models.events.SaldoContabileAggiornato;
@@ -22,6 +23,7 @@ import neo.bank.contocorrente.domain.models.vo.DataApertura;
 import neo.bank.contocorrente.domain.models.vo.DataChiusura;
 import neo.bank.contocorrente.domain.models.vo.Iban;
 import neo.bank.contocorrente.domain.models.vo.IdContoCorrente;
+import neo.bank.contocorrente.domain.models.vo.NumeroCarta;
 import neo.bank.contocorrente.domain.models.vo.SommaBonificiUscita;
 import neo.bank.contocorrente.domain.models.vo.UsernameCliente;
 import neo.bank.contocorrente.domain.services.AnagraficaClienteService;
@@ -45,7 +47,8 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
     private double saldoContabile;
     private double saldoDisponibile;
     private DataChiusura dataChiusura;
-    private List<UsernameCliente> clientiAssociati = new ArrayList<>();
+    private UsernameCliente intestatario = null;
+    private List<NumeroCarta> carteAssociate = new ArrayList<>();
 
     public static ContoCorrente apri(GeneratoreIdService generatoreIdService, GeneratoreCoordinateBancarieService generatoreCoordinateBancarie, AnagraficaClienteService anagraficaClienteService, UsernameCliente usernameCliente) {
         
@@ -82,6 +85,12 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
         events(new SogliaBonificoMensileImpostata(nuovaSogliaBonifico));
     }
 
+    public void associaCarta(UsernameCliente usernameClienteRichiedente, NumeroCarta numeroCarta) {
+        verificaAccessoCliente(usernameClienteRichiedente);
+        verificaContoChiuso();
+        events(new CartaAssociata(numeroCarta));
+    }
+
     public void predisponiBonifico(Iban ibanDestinatario, String causale, double importo, UsernameCliente clienteRichiedente, TransazioniService transazioniService) {
         
         verificaAccessoCliente(clienteRichiedente);
@@ -110,7 +119,7 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
     }
 
     private void verificaAccessoCliente(UsernameCliente usernameCliente) {
-        if( !clientiAssociati.stream().anyMatch(c -> c.username().equals(usernameCliente.username()))){
+        if( !intestatario.equals(usernameCliente)){
             throw new BusinessRuleException(String.format("Accesso al conto non autorizzato per il cliente [%s]", usernameCliente.username()));
         }
     }
@@ -122,7 +131,7 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
     }
 
     private void apply(ContoCorrenteAperto event) {
-        this.clientiAssociati.add(event.usernameCliente());
+        this.intestatario = event.usernameCliente();
         this.coordinateBancarie = event.coordinateBancarie();
         this.dataApertura = event.dataApertura();
         this.idContoCorrente = event.idContoCorrente();
@@ -150,6 +159,10 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
         saldoDisponibile += event.importo();   
     }
 
+    private void apply(CartaAssociata event) {
+        carteAssociate.add(event.numeroCarta());   
+    }
+
     @Override
     public void apply(EventPayload event) {
         switch (event) {
@@ -159,6 +172,7 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
             case BonificoPredisposto ev -> apply((BonificoPredisposto) ev);
             case SaldoContabileAggiornato ev -> apply((SaldoContabileAggiornato) ev);
             case SaldoDisponibileAggiornato ev -> apply((SaldoDisponibileAggiornato) ev);
+            case CartaAssociata ev -> apply((CartaAssociata) ev);
             default -> throw new IllegalArgumentException("Evento non supportato");
         }
     }

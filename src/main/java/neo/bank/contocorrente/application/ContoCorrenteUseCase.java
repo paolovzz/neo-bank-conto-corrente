@@ -4,6 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import neo.bank.contocorrente.application.ports.input.commands.AggiornaSaldoCmd;
+import neo.bank.contocorrente.application.ports.input.commands.AssociaCartaCmd;
 import neo.bank.contocorrente.application.ports.input.commands.CreaContoCorrenteCmd;
 import neo.bank.contocorrente.application.ports.input.commands.ImpostaSogliaBonificoGiornalieraCmd;
 import neo.bank.contocorrente.application.ports.input.commands.ImpostaSogliaBonificoMensileCmd;
@@ -54,6 +55,17 @@ public class ContoCorrenteUseCase {
         ibanProjRepoPort.salva(cc.getCoordinateBancarie().iban(), cc.getIdContoCorrente());
         log.info("Comando [creaContoCorrente] terminato...");
     }
+
+    public void associaCarta(AssociaCartaCmd cmd) {
+        log.info("Comando [associaCarta] in esecuzione...");
+        IdContoCorrente idContoCorrente = ibanProjRepoPort.recuperaDaIban(cmd.getIban());
+        ContoCorrente cc = ccOutputPort.recuperaDaId(idContoCorrente);
+        cc.associaCarta(cmd.getUsernameCliente(), cmd.getNumeroCarta());
+        ccOutputPort.salva(cc);
+        ibanProjRepoPort.salva(cc.getCoordinateBancarie().iban(), cc.getIdContoCorrente());
+        log.info("Comando [associaCarta] terminato...");
+    }
+
 
     public ContoCorrente recuperaContoCorrenteDaId(IdContoCorrente idContoCorrente) {
         log.info("Recupero info contoCorrente per id [{}]", idContoCorrente.id());
