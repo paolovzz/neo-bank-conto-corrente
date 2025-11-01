@@ -1,15 +1,20 @@
 package neo.bank.contocorrente.domain.models.aggregates;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import neo.bank.contocorrente.domain.exceptions.BusinessRuleException;
+import neo.bank.contocorrente.domain.models.entities.Bonifico;
+import neo.bank.contocorrente.domain.models.entities.Operazione;
 import neo.bank.contocorrente.domain.models.events.BonificoPredisposto;
 import neo.bank.contocorrente.domain.models.events.CartaAssociata;
 import neo.bank.contocorrente.domain.models.events.ContoCorrenteAperto;
@@ -18,13 +23,14 @@ import neo.bank.contocorrente.domain.models.events.SaldoContabileAggiornato;
 import neo.bank.contocorrente.domain.models.events.SaldoDisponibileAggiornato;
 import neo.bank.contocorrente.domain.models.events.SogliaBonificoGiornalieraImpostata;
 import neo.bank.contocorrente.domain.models.events.SogliaBonificoMensileImpostata;
+import neo.bank.contocorrente.domain.models.events.TipologiaFlusso;
 import neo.bank.contocorrente.domain.models.vo.CoordinateBancarie;
 import neo.bank.contocorrente.domain.models.vo.DataApertura;
 import neo.bank.contocorrente.domain.models.vo.DataChiusura;
 import neo.bank.contocorrente.domain.models.vo.Iban;
 import neo.bank.contocorrente.domain.models.vo.IdContoCorrente;
+import neo.bank.contocorrente.domain.models.vo.IdOperazione;
 import neo.bank.contocorrente.domain.models.vo.NumeroCarta;
-import neo.bank.contocorrente.domain.models.vo.SommaBonificiUscita;
 import neo.bank.contocorrente.domain.models.vo.UsernameCliente;
 import neo.bank.contocorrente.domain.services.AnagraficaClienteService;
 import neo.bank.contocorrente.domain.services.GeneratoreCoordinateBancarieService;
@@ -49,7 +55,7 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
     private DataChiusura dataChiusura;
     private UsernameCliente intestatario = null;
     private List<NumeroCarta> carteAssociate = new ArrayList<>();
-
+    private List<Operazione<?>> operazioni = new ArrayList<>();
     public static ContoCorrente apri(GeneratoreIdService generatoreIdService, GeneratoreCoordinateBancarieService generatoreCoordinateBancarie, AnagraficaClienteService anagraficaClienteService, UsernameCliente usernameCliente) {
         
         if(!anagraficaClienteService.richiediVerificaCliente(usernameCliente)) {
@@ -99,14 +105,21 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
         if(Math.abs(saldoDisponibile) < importAbs) {
           throw new BusinessRuleException(String.format("Importo [%s] non disponibile", importAbs));  
         }
-        SommaBonificiUscita sommaBonificiUscita = transazioniService.richiediTotaleBonificiUscita(coordinateBancarie.iban());
-        if(sogliaBonificoGiornaliera < sommaBonificiUscita.getSommaOdierna() + importAbs) {
+        double totaleBonificiOggi = transazioniService.richiediTotaleBonificiUscita(coordinateBancarie.iban(), LocalDate.now(), LocalDate.now());
+        if(sogliaBonificoGiornaliera < totaleBonificiOggi + importAbs) {
             throw new BusinessRuleException("Impossibile inviare il bonifico: raggiunto il limite giornaliero");  
         }
-        if(sogliaBonificoMensile < sommaBonificiUscita.getSommaMensile() + importAbs) {
+
+        YearMonth meseCorrente = YearMonth.now();
+        LocalDate primoGiornoDelMeseCorrente = meseCorrente.atDay(1);
+        LocalDate ultimoGiornoDelMeseCorrente = meseCorrente.atEndOfMonth();
+        double totaleBonificQuestoMese = transazioniService.richiediTotaleBonificiUscita(coordinateBancarie.iban(), primoGiornoDelMeseCorrente, ultimoGiornoDelMeseCorrente);
+        if(sogliaBonificoMensile < totaleBonificQuestoMese + importAbs) {
             throw new BusinessRuleException("Impossibile inviare il bonifico: raggiunto il limite mensile");  
         }
-        events(new BonificoPredisposto(coordinateBancarie.iban(), ibanDestinatario, importo * (-1), causale));
+        IdOperazione idOperazione = new IdOperazione(UUID.randomUUID().toString());
+        LocalDateTime dataOperazione = LocalDateTime.now(ZoneOffset.UTC);
+        events(new BonificoPredisposto(coordinateBancarie.iban(), ibanDestinatario, importo * (-1), causale, idOperazione, dataOperazione));
     }
 
 
@@ -118,7 +131,7 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
         events(new SaldoDisponibileAggiornato(importo));
     }
 
-    private void verificaAccessoCliente(UsernameCliente usernameCliente) {
+    public void verificaAccessoCliente(UsernameCliente usernameCliente) {
         if( !intestatario.equals(usernameCliente)){
             throw new BusinessRuleException(String.format("Accesso al conto non autorizzato per il cliente [%s]", usernameCliente.username()));
         }
@@ -149,6 +162,10 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
 
     private void apply(BonificoPredisposto event) {
         saldoDisponibile += event.importo();   
+
+        Bonifico bonifico = new Bonifico(event.importo(), TipologiaFlusso.ADDEBITO, event.ibanMittente(), event.ibanDestinatario(), event.causale());
+        Operazione<Bonifico> operazione = new Operazione<Bonifico>(event.idOperazione(), event.dataOperazione(), bonifico);
+        operazioni.add(operazione);
     }
 
     private void apply(SaldoContabileAggiornato event) {
