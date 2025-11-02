@@ -13,8 +13,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import neo.bank.contocorrente.domain.exceptions.BusinessRuleException;
-import neo.bank.contocorrente.domain.models.entities.Bonifico;
-import neo.bank.contocorrente.domain.models.entities.Operazione;
 import neo.bank.contocorrente.domain.models.events.BonificoPredisposto;
 import neo.bank.contocorrente.domain.models.events.CartaAssociata;
 import neo.bank.contocorrente.domain.models.events.ContoCorrenteAperto;
@@ -23,7 +21,6 @@ import neo.bank.contocorrente.domain.models.events.SaldoContabileAggiornato;
 import neo.bank.contocorrente.domain.models.events.SaldoDisponibileAggiornato;
 import neo.bank.contocorrente.domain.models.events.SogliaBonificoGiornalieraImpostata;
 import neo.bank.contocorrente.domain.models.events.SogliaBonificoMensileImpostata;
-import neo.bank.contocorrente.domain.models.events.TipologiaFlusso;
 import neo.bank.contocorrente.domain.models.vo.CoordinateBancarie;
 import neo.bank.contocorrente.domain.models.vo.DataApertura;
 import neo.bank.contocorrente.domain.models.vo.DataChiusura;
@@ -55,7 +52,6 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
     private DataChiusura dataChiusura;
     private UsernameCliente intestatario = null;
     private List<NumeroCarta> carteAssociate = new ArrayList<>();
-    private List<Operazione<?>> operazioni = new ArrayList<>();
     public static ContoCorrente apri(GeneratoreIdService generatoreIdService, GeneratoreCoordinateBancarieService generatoreCoordinateBancarie, AnagraficaClienteService anagraficaClienteService, UsernameCliente usernameCliente) {
         
         if(!anagraficaClienteService.richiediVerificaCliente(usernameCliente)) {
@@ -97,7 +93,7 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
         events(new CartaAssociata(numeroCarta));
     }
 
-    public void predisponiBonifico(Iban ibanDestinatario, String causale, double importo, UsernameCliente clienteRichiedente, TransazioniService transazioniService) {
+    public IdOperazione predisponiBonifico(Iban ibanDestinatario, String causale, double importo, UsernameCliente clienteRichiedente, TransazioniService transazioniService) {
         
         verificaAccessoCliente(clienteRichiedente);
         verificaContoChiuso();
@@ -119,7 +115,8 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
         }
         IdOperazione idOperazione = new IdOperazione(UUID.randomUUID().toString());
         LocalDateTime dataOperazione = LocalDateTime.now(ZoneOffset.UTC);
-        events(new BonificoPredisposto(coordinateBancarie.iban(), ibanDestinatario, importo * (-1), causale, idOperazione, dataOperazione));
+        events(new BonificoPredisposto(coordinateBancarie.iban(), ibanDestinatario, importo,  causale, idOperazione, dataOperazione));
+        return idOperazione;
     }
 
 
@@ -161,11 +158,8 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
     }
 
     private void apply(BonificoPredisposto event) {
-        saldoDisponibile += event.importo();   
+        saldoDisponibile += (event.importo() * -1 );   
 
-        Bonifico bonifico = new Bonifico(event.importo(), TipologiaFlusso.ADDEBITO, event.ibanMittente(), event.ibanDestinatario(), event.causale());
-        Operazione<Bonifico> operazione = new Operazione<Bonifico>(event.idOperazione(), event.dataOperazione(), bonifico);
-        operazioni.add(operazione);
     }
 
     private void apply(SaldoContabileAggiornato event) {

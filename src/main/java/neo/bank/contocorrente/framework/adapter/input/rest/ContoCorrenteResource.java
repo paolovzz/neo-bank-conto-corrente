@@ -24,6 +24,7 @@ import neo.bank.contocorrente.application.ports.input.commands.CreaContoCorrente
 import neo.bank.contocorrente.application.ports.input.commands.ImpostaSogliaBonificoGiornalieraCmd;
 import neo.bank.contocorrente.application.ports.input.commands.ImpostaSogliaBonificoMensileCmd;
 import neo.bank.contocorrente.application.ports.input.commands.PredisponiBonificoCmd;
+import neo.bank.contocorrente.application.ports.input.commands.RecuperaContoCorrenteCmd;
 import neo.bank.contocorrente.application.ports.input.commands.RecuperaTransazioniCmd;
 import neo.bank.contocorrente.domain.models.aggregates.ContoCorrente;
 import neo.bank.contocorrente.domain.models.events.TipologiaFlusso;
@@ -31,7 +32,6 @@ import neo.bank.contocorrente.domain.models.vo.Iban;
 import neo.bank.contocorrente.domain.models.vo.RispostaPaginata;
 import neo.bank.contocorrente.domain.models.vo.Transazione;
 import neo.bank.contocorrente.domain.models.vo.UsernameCliente;
-import neo.bank.contocorrente.framework.adapter.input.rest.request.CreaContoCorrenteRequest;
 import neo.bank.contocorrente.framework.adapter.input.rest.request.ImpostaSogliaBonificoRequest;
 import neo.bank.contocorrente.framework.adapter.input.rest.request.InviaBonificoRequest;
 import neo.bank.contocorrente.framework.adapter.input.rest.response.ContoCorrenteInfoResponse;
@@ -53,28 +53,27 @@ public class ContoCorrenteResource {
     @Produces(value = MediaType.APPLICATION_JSON)
     public Response recuperaContoCorrenteDaIban(@PathParam(value = "iban") String iban) {
 
-        ContoCorrente contoCorrente = app.recuperaContoCorrenteDaIban(new Iban(iban));
+        String username = recuperaUtenteAutenticato();
+        ContoCorrente contoCorrente = app.recuperaContoCorrenteDaIban(new RecuperaContoCorrenteCmd(new UsernameCliente(username), new Iban(iban)));
         ContoCorrenteInfoResponse bodyResponse = new ContoCorrenteInfoResponse(contoCorrente);
         return Response.ok(bodyResponse).build();
     }
 
-    @Path("/{iban}/verifica")
-    @GET
-    @Produces(value = MediaType.APPLICATION_JSON)
-    public Response verificaContoCorrente(@PathParam(value = "iban") String iban, @QueryParam("cliente") String cliente) {
+    // @Path("/{iban}/verifica")
+    // @GET
+    // @Produces(value = MediaType.APPLICATION_JSON)
+    // public Response verificaContoCorrente(@PathParam(value = "iban") String iban) {
 
-        ContoCorrente contoCorrente = app.recuperaContoCorrenteDaIban(new Iban(iban));
-        if(contoCorrente.getIntestatario().equals(new UsernameCliente(cliente))) {
-            return Response.ok().build();
-        } else {
-            return Response.status(403).build();
-        }
-    }
+    //     String username = recuperaUtenteAutenticato();
+    //     app.recuperaContoCorrenteDaIban(new RecuperaContoCorrenteCmd(new UsernameCliente(username), new Iban(iban)));
+    //     return Response.ok().build();
+    // }
 
     @POST
     @Produces(value = MediaType.APPLICATION_JSON)
-    public Response creaContoCorrente(CreaContoCorrenteRequest cmd) {
-        app.creaContoCorrente(new CreaContoCorrenteCmd(new UsernameCliente(cmd.getUsernameCliente())));
+    public Response creaContoCorrente() {
+        String username = recuperaUtenteAutenticato();
+        app.creaContoCorrente(new CreaContoCorrenteCmd(new UsernameCliente(username)));
         return Response.ok().build();
     }
 
@@ -82,7 +81,8 @@ public class ContoCorrenteResource {
     @PUT
     @Produces(value = MediaType.APPLICATION_JSON)
     public Response impostaSogliaBonificoGiornaliera( ImpostaSogliaBonificoRequest request) {
-        app.impostaSogliaBonificoGiornaliera(new ImpostaSogliaBonificoGiornalieraCmd(new UsernameCliente(request.getUsernameCliente()), new Iban(request.getIban()), request.getNuovaSoglia()));
+        String username = recuperaUtenteAutenticato();
+        app.impostaSogliaBonificoGiornaliera(new ImpostaSogliaBonificoGiornalieraCmd(new UsernameCliente(username), new Iban(request.getIban()), request.getNuovaSoglia()));
         return Response.noContent().build();
     }
 
@@ -90,7 +90,8 @@ public class ContoCorrenteResource {
     @PUT
     @Produces(value = MediaType.APPLICATION_JSON)
     public Response impostaSogliaBonificoMensile(ImpostaSogliaBonificoRequest request) {
-        app.impostaSogliaBonificoMensile(new ImpostaSogliaBonificoMensileCmd(new UsernameCliente(request.getUsernameCliente()), new Iban(request.getIban()), request.getNuovaSoglia()));
+        String username = recuperaUtenteAutenticato();
+        app.impostaSogliaBonificoMensile(new ImpostaSogliaBonificoMensileCmd(new UsernameCliente(username), new Iban(request.getIban()), request.getNuovaSoglia()));
         return Response.noContent().build();
     }
     
@@ -98,7 +99,9 @@ public class ContoCorrenteResource {
     @POST
     @Produces(value = MediaType.APPLICATION_JSON)
     public Response inviaBonifico(InviaBonificoRequest request) {
-        app.predisponiBonifico(new PredisponiBonificoCmd(new UsernameCliente(request.getUsernameCliente()), new Iban(request.getIbanMittente()), request.getImporto(), request.getCausale(), new Iban(request.getIbanDestinatario())));
+
+        String username = recuperaUtenteAutenticato();
+        app.predisponiBonifico(new PredisponiBonificoCmd(new UsernameCliente(username), new Iban(request.getIbanMittente()), request.getImporto(), request.getCausale(), new Iban(request.getIbanDestinatario())));
         return Response.accepted().build();
     }
 
@@ -118,8 +121,6 @@ public class ContoCorrenteResource {
     ) {
 
         String username = recuperaUtenteAutenticato();
-        log.info("user: {}", username);
-        log.info("IBAN RICHIESTO: {}", iban);
         RispostaPaginata<Transazione> rp = app.recuperaTransazioni(new RecuperaTransazioniCmd(new UsernameCliente(username), new Iban(iban), dataCreazioneMin != null ? dataCreazioneMin.atStartOfDay() : null, dataCreazioneMax != null ? dataCreazioneMax.atTime(LocalTime.MAX): null, importoMin, importoMax, tipologiaFlusso, numeroPagina, dimensionePagina));
         RispostaPaginata<TransazioneResponse> risultato = new RispostaPaginata<>(rp.getResult().stream().map(TransazioneResponse::new).toList(), rp.getNumeroPagina(), rp.getDimensionePagina(), rp.getTotaleRisultati());
         return Response.ok(risultato).build();

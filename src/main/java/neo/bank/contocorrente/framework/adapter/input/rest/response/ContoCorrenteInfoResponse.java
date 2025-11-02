@@ -1,10 +1,7 @@
 package neo.bank.contocorrente.framework.adapter.input.rest.response;
 
-import java.util.List;
-
 import lombok.Getter;
 import neo.bank.contocorrente.domain.models.aggregates.ContoCorrente;
-import neo.bank.contocorrente.domain.models.entities.Operazione;
 
 @Getter
 public class ContoCorrenteInfoResponse {
@@ -18,7 +15,6 @@ public class ContoCorrenteInfoResponse {
     private String  bic;
     private String  cab;
     private String abi;
-    private List<Operazione<?>> operazioni;
 
     public ContoCorrenteInfoResponse(ContoCorrente cc) {
         this.iban = cc.getCoordinateBancarie().iban().codice();
@@ -30,7 +26,6 @@ public class ContoCorrenteInfoResponse {
         this.bic = cc.getCoordinateBancarie().bic().codice();
         this.cab = cc.getCoordinateBancarie().cab().codice();
         this.abi = cc.getCoordinateBancarie().abi().codice();
-        this.operazioni = cc.getOperazioni();
     }
 
     
