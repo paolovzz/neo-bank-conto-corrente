@@ -67,7 +67,6 @@ public class ContoCorrenteUseCase {
         ContoCorrente cc = ccOutputPort.recuperaDaId(idContoCorrente);
         cc.associaCarta(cmd.getUsernameCliente(), cmd.getNumeroCarta());
         ccOutputPort.salva(cc);
-        ibanProjRepoPort.salva(cc.getCoordinateBancarie().getIban(), cc.getIdContoCorrente());
         log.info("Comando [associaCarta] terminato...");
     }
 
