@@ -1,7 +1,12 @@
 package neo.bank.contocorrente.domain.models.events;
 
-public record SaldoContabileAggiornato(double importo) implements EventPayload {
+import lombok.Value;
 
+@Value
+public class SaldoContabileAggiornato implements EventPayload {
+
+    private double importo;
+    
     @Override
     public String eventType() {
         return "SaldoContabileAggiornato";

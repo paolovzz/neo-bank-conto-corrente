@@ -10,7 +10,7 @@ public class SaldoContabileAggiornatoConverter implements IntegrationEventConver
     @Override
     public IESaldoContabileAggiornato convert(SaldoContabileAggiornato ev) {
 
-        return new IESaldoContabileAggiornato(ev.importo());
+        return new IESaldoContabileAggiornato(ev.getImporto());
     }
 
     @Override

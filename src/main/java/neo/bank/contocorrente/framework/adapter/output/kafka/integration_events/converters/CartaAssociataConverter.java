@@ -9,7 +9,7 @@ public class CartaAssociataConverter implements IntegrationEventConverter<CartaA
 
     @Override
     public IECartaAssociata convert(CartaAssociata domainEvent) {
-        return new IECartaAssociata(domainEvent.numeroCarta().numero());
+        return new IECartaAssociata(domainEvent.getNumeroCarta().getNumero());
     }
 
     @Override

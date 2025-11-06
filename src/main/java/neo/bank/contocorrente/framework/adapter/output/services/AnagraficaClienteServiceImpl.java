@@ -24,9 +24,9 @@ public class AnagraficaClienteServiceImpl implements AnagraficaClienteService{
 
     @Override
     public boolean richiediVerificaCliente(UsernameCliente usernameCliente) {
-       log.info("Chiedo verifica riguarda l'esistenza del cliente [{}]", usernameCliente.username());
+       log.info("Chiedo verifica riguarda l'esistenza del cliente [{}]", usernameCliente.getUsername());
         try {
-            client.recuperaCliente(usernameCliente.username());
+            client.recuperaCliente(usernameCliente.getUsername());
             log.info("Verifica conclusa positivamente");
             return true;
         } catch(WebApplicationException ex) {

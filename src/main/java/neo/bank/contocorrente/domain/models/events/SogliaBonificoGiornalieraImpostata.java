@@ -1,8 +1,11 @@
 package neo.bank.contocorrente.domain.models.events;
 
+import lombok.Value;
 
-public record SogliaBonificoGiornalieraImpostata(int nuovaSogliaBonifico) implements EventPayload {
+@Value
+public class SogliaBonificoGiornalieraImpostata implements EventPayload {
 
+    private int nuovaSogliaBonifico;
     @Override
     public String eventType() {
         return "SogliaBonificoGiornalieraImpostata";

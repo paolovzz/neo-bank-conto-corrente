@@ -1,10 +1,16 @@
 package neo.bank.contocorrente.domain.models.vo;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import neo.bank.contocorrente.domain.exceptions.ValidazioneException;
 import neo.bank.contocorrente.domain.models.enums.CodiceErrore;
 
-public record Bic(String codice) {
 
+@Getter
+@EqualsAndHashCode
+public class Bic {
+
+    private String codice;
 
     public Bic(String codice) {
         if (codice == null) {

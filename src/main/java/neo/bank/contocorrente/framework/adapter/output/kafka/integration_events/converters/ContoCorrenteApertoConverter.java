@@ -11,8 +11,8 @@ public class ContoCorrenteApertoConverter implements IntegrationEventConverter<C
     @Override
     public IEContoCorrenteAperto convert(ContoCorrenteAperto ev) {
 
-        CoordinateBancarie coordinate = ev.coordinateBancarie();
-        return new IEContoCorrenteAperto(ev.idContoCorrente().id(), ev.usernameCliente().username(), coordinate.numeroConto().numero(), coordinate.iban().codice(), coordinate.bic().codice(), coordinate.cab().codice(), coordinate.abi().codice(), ev.dataApertura().dataOra(), ev.saldoDisponibile(), ev.saldoContabile());
+        CoordinateBancarie coordinate = ev.getCoordinateBancarie();
+        return new IEContoCorrenteAperto(ev.getIdContoCorrente().getId(), ev.getUsernameCliente().getUsername(), coordinate.getNumeroConto().getNumero(), coordinate.getIban().getCodice(), coordinate.getBic().getCodice(), coordinate.getCab().getCodice(), coordinate.getAbi().getCodice(), ev.getDataApertura().getDataOra(), ev.getSaldoDisponibile(), ev.getSaldoContabile());
     }
 
     @Override

@@ -9,7 +9,7 @@ public class BonificoPredispostoConverter implements IntegrationEventConverter<B
 
     @Override
     public IEBonificoPredisposto convert(BonificoPredisposto ev) {
-        return new IEBonificoPredisposto(ev.ibanMittente().codice(), ev.ibanDestinatario().codice(), ev.importo(), ev.causale(), ev.idOperazione().id(), ev.dataOperazione());
+        return new IEBonificoPredisposto(ev.getIbanMittente().getCodice(), ev.getIbanDestinatario().getCodice(), ev.getImporto(), ev.getCausale(), ev.getIdOperazione().getId(), ev.getDataOperazione());
     }
 
     @Override

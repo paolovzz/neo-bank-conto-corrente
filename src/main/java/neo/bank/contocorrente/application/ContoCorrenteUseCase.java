@@ -57,7 +57,7 @@ public class ContoCorrenteUseCase {
         log.info("Comando [creaContoCorrente] in esecuzione...");
         ContoCorrente cc = ContoCorrente.apri(generatoreIdService, generatoreCoordinateBancarie, anagraficaClienteService, cmd.getUsernameCliente());
         ccOutputPort.salva(cc);
-        ibanProjRepoPort.salva(cc.getCoordinateBancarie().iban(), cc.getIdContoCorrente());
+        ibanProjRepoPort.salva(cc.getCoordinateBancarie().getIban(), cc.getIdContoCorrente());
         log.info("Comando [creaContoCorrente] terminato...");
     }
 
@@ -67,20 +67,20 @@ public class ContoCorrenteUseCase {
         ContoCorrente cc = ccOutputPort.recuperaDaId(idContoCorrente);
         cc.associaCarta(cmd.getUsernameCliente(), cmd.getNumeroCarta());
         ccOutputPort.salva(cc);
-        ibanProjRepoPort.salva(cc.getCoordinateBancarie().iban(), cc.getIdContoCorrente());
+        ibanProjRepoPort.salva(cc.getCoordinateBancarie().getIban(), cc.getIdContoCorrente());
         log.info("Comando [associaCarta] terminato...");
     }
 
 
     public ContoCorrente recuperaContoCorrenteDaId(IdContoCorrente idContoCorrente) {
-        log.info("Recupero info contoCorrente per id [{}]", idContoCorrente.id());
+        log.info("Recupero info contoCorrente per id [{}]", idContoCorrente.getId());
         ContoCorrente contoCorrente = ccOutputPort.recuperaDaId(idContoCorrente);
         log.info("Recupero terminato");
         return contoCorrente;
     }
 
     public ContoCorrente recuperaContoCorrenteDaIban(RecuperaContoCorrenteCmd cmd) {
-        log.info("Recupero info contoCorrente per iban [{}]", cmd.getIban().codice());
+        log.info("Recupero info contoCorrente per iban [{}]", cmd.getIban().getCodice());
         IdContoCorrente idContoCorrente = ibanProjRepoPort.recuperaDaIban(cmd.getIban());
         ContoCorrente contoCorrente = ccOutputPort.recuperaDaId(idContoCorrente);
         contoCorrente.verificaAccessoCliente(cmd.getUsernameCliente());

@@ -27,7 +27,7 @@ public class TransazioniServiceImpl implements TransazioniService{
 
     @Override
     public double richiediTotaleBonificiUscita(Iban iban, LocalDate dataInf, LocalDate dataSup) {
-        log.info("Recupero totale bonifici in uscita per l'iban [{}] nel periodo tra [{}] e [{}]", iban.codice(), dataInf, dataSup);
+        log.info("Recupero totale bonifici in uscita per l'iban [{}] nel periodo tra [{}] e [{}]", iban.getCodice(), dataInf, dataSup);
         double totale = transazioniPrjRepo.calcolaTotaleBonificiUscita(iban, dataInf.atStartOfDay(ZoneOffset.UTC).toLocalDateTime(), dataSup.atTime(LocalTime.MAX));
         log.info("Totale bonifici recuperato: [{}]", totale);
         return totale;

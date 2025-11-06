@@ -36,20 +36,20 @@ public class TransazioneProjectionRepositoryImpl implements PanacheMongoReposito
     public void salva(Transazione transazione) {
                 log.info("Registro la transazione creata nella projection");
 
-        String idTransazione = transazione.getIdTransazione().id();
-        String idOperazione = transazione.getIdOperazione().id();
+        String idTransazione = transazione.getIdTransazione().getId();
+        String idOperazione = transazione.getIdOperazione().getId();
         double importo = transazione.getImporto();
         String causale = transazione.getCausale();
         LocalDateTime dataCreazione = transazione.getDataCreazione();
-        String idContoCorrente = transazione.getIdContoCorrente().id();
-        String iban = transazione.getIban().codice();
+        String idContoCorrente = transazione.getIdContoCorrente().getId();
+        String iban = transazione.getIban().getCodice();
         TransazioneProjectionEntity entity = new TransazioneProjectionEntity(idTransazione, idContoCorrente, idOperazione, importo, iban, dataCreazione, causale, transazione.getTipologiaFlusso());
         persist(entity);
     }
 
     @Override
     public Transazione recuperaDaIdOperazione(IdOperazione idOperazione) {
-        return toVO(find("idOperazione", idOperazione.id()).singleResult());
+        return toVO(find("idOperazione", idOperazione.getId()).singleResult());
     }
 
     @Override
@@ -62,8 +62,8 @@ public class TransazioneProjectionRepositoryImpl implements PanacheMongoReposito
 
         List<Bson> pipeline = List.of(
             Aggregates.match(Filters.and(
-                Filters.eq("iban", iban.codice()),
-                Filters.eq("tipologiaFlusso", TipologiaFlusso.ADDEBITO), // tipologiaFlusso come String
+                Filters.eq("iban", iban.getCodice()),
+                Filters.eq("tipologiaFlusso", TipologiaFlusso.ADDEBITO),
                 Filters.gte("dataCreazione", dataInf),
                 Filters.lte("dataCreazione", dataSup)
             )),
@@ -75,7 +75,7 @@ public class TransazioneProjectionRepositoryImpl implements PanacheMongoReposito
         if (result != null && result.containsKey("totale")) {
             Object totale = result.get("totale");
             if (totale instanceof Number) {
-                return ((Number) totale).doubleValue();  // ✅ conversione sicura
+                return ((Number) totale).doubleValue(); 
             }
         }
         return 0.0;
@@ -88,7 +88,7 @@ public class TransazioneProjectionRepositoryImpl implements PanacheMongoReposito
             int dimensionePagina) {
 
         List<Bson> filtri = new ArrayList<>();
-        filtri.add(eq("idContoCorrente", idCC.id()));
+        filtri.add(eq("idContoCorrente", idCC.getId()));
 
         if (dataInf != null) filtri.add(gte("dataCreazione", dataInf));
         if (dataSup != null) filtri.add(lte("dataCreazione", dataSup));
@@ -124,7 +124,7 @@ public class TransazioneProjectionRepositoryImpl implements PanacheMongoReposito
         if(vo == null)
             return null;
         else {
-            return new TransazioneProjectionEntity(vo.getIdTransazione().id(),vo.getIdContoCorrente().id(), vo.getIdOperazione().id(), vo.getImporto(), vo.getIban().codice(), vo.getDataCreazione(), vo.getCausale(), vo.getTipologiaFlusso());
+            return new TransazioneProjectionEntity(vo.getIdTransazione().getId(),vo.getIdContoCorrente().getId(), vo.getIdOperazione().getId(), vo.getImporto(), vo.getIban().getCodice(), vo.getDataCreazione(), vo.getCausale(), vo.getTipologiaFlusso());
         }
     }
 }

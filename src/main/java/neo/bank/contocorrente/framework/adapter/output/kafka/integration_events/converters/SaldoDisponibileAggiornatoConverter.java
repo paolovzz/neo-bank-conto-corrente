@@ -10,7 +10,7 @@ public class SaldoDisponibileAggiornatoConverter implements IntegrationEventConv
     @Override
     public IESaldoDisponibileAggiornato convert(SaldoDisponibileAggiornato ev) {
 
-        return new IESaldoDisponibileAggiornato(ev.importo());
+        return new IESaldoDisponibileAggiornato(ev.getImporto());
     }
 
     @Override

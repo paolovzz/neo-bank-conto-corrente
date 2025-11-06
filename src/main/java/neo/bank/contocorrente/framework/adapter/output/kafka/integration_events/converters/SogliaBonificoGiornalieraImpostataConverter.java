@@ -10,7 +10,7 @@ public class SogliaBonificoGiornalieraImpostataConverter implements IntegrationE
     @Override
     public IESogliaBonificoGiornalieraImpostata convert(SogliaBonificoGiornalieraImpostata ev) {
 
-        return new IESogliaBonificoGiornalieraImpostata(ev.nuovaSogliaBonifico());
+        return new IESogliaBonificoGiornalieraImpostata(ev.getNuovaSogliaBonifico());
     }
 
     @Override

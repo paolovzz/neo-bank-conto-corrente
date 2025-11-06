@@ -17,15 +17,15 @@ public class ContoCorrenteInfoResponse {
     private String abi;
 
     public ContoCorrenteInfoResponse(ContoCorrente cc) {
-        this.iban = cc.getCoordinateBancarie().iban().codice();
+        this.iban = cc.getCoordinateBancarie().getIban().getCodice();
         this.saldoDisponibile = cc.getSaldoDisponibile();
         this.saldoContabile = cc.getSaldoContabile();
         this.sogliaBonificiMensile = cc.getSogliaBonificoMensile();
         this.sogliaBonificiGiornaliera = cc.getSogliaBonificoGiornaliera();
-        this.numeroConto = cc.getCoordinateBancarie().numeroConto().numero();
-        this.bic = cc.getCoordinateBancarie().bic().codice();
-        this.cab = cc.getCoordinateBancarie().cab().codice();
-        this.abi = cc.getCoordinateBancarie().abi().codice();
+        this.numeroConto = cc.getCoordinateBancarie().getNumeroConto().getNumero();
+        this.bic = cc.getCoordinateBancarie().getBic().getCodice();
+        this.cab = cc.getCoordinateBancarie().getCab().getCodice();
+        this.abi = cc.getCoordinateBancarie().getAbi().getCodice();
     }
 
     

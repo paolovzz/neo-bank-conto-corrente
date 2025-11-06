@@ -25,14 +25,14 @@ public class ContoCorrentOutputAdapter  implements ContoCorrenteOutputPort{
 
         List<EventPayload> events = cc.popChanges();
         ccRepo.save(cc.getIdContoCorrente(), events);
-        publisherPort.publish(ContoCorrente.AGGREGATE_NAME, cc.getIdContoCorrente().id(), events);
+        publisherPort.publish(ContoCorrente.AGGREGATE_NAME, cc.getIdContoCorrente().getId(), events);
     }
 
     @Override
     public ContoCorrente recuperaDaId(IdContoCorrente idContoCorrente) {
-        ContoCorrente cc = ccRepo.findById(idContoCorrente.id());
+        ContoCorrente cc = ccRepo.findById(idContoCorrente.getId());
         if(cc == null) {
-            throw new ContoCorrenteNonTrovatoException(idContoCorrente.id());
+            throw new ContoCorrenteNonTrovatoException(idContoCorrente.getId());
         }
        return cc;
     }

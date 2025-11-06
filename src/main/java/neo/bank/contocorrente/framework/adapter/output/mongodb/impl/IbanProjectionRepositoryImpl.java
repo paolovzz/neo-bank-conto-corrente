@@ -16,12 +16,12 @@ public class IbanProjectionRepositoryImpl implements PanacheMongoRepositoryBase<
     @Override
     public void salva(Iban iban, IdContoCorrente idContoCorrente) {
         log.info("Aggiorno la projection...");
-        persist(new IbanProjectionEntity(iban.codice(), idContoCorrente.id()));
+        persist(new IbanProjectionEntity(iban.getCodice(), idContoCorrente.getId()));
     }
 
     @Override
     public IdContoCorrente recuperaDaIban(Iban iban) {
-        IbanProjectionEntity entity = findById(iban.codice());
+        IbanProjectionEntity entity = findById(iban.getCodice());
         log.info("ENTITY RECUPERATO: {}", entity);
         return entity == null ? null : new IdContoCorrente(entity.getIdContoCorrente());
     }

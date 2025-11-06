@@ -19,14 +19,14 @@ public class TransazioneResponse {
     private TipologiaFlusso tipologiaFlusso;
 
     public TransazioneResponse(Transazione transazione) {
-        this.idTransazione = transazione.getIdTransazione().id();
-        this.idContoCorrente = transazione.getIdContoCorrente().id();
-        this.idOperazione = transazione.getIdOperazione().id();
+        this.idTransazione = transazione.getIdTransazione().getId();
+        this.idContoCorrente = transazione.getIdContoCorrente().getId();
+        this.idOperazione = transazione.getIdOperazione().getId();
         this.importo = transazione.getImporto();
         this.dataCreazione = transazione.getDataCreazione();
         this.causale = transazione.getCausale();
         this.tipologiaFlusso = transazione.getTipologiaFlusso();
-        this.iban = transazione.getIban().codice();
+        this.iban = transazione.getIban().getCodice();
     }
 
     

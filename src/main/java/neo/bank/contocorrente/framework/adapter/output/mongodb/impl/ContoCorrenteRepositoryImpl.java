@@ -27,11 +27,11 @@ public class ContoCorrenteRepositoryImpl implements PanacheMongoRepository<Event
 
     @Override
     public void save(IdContoCorrente idContoCorrente, List<EventPayload> events) {
-        long nextSequence = getNextSequence(idContoCorrente.id());
+        long nextSequence = getNextSequence(idContoCorrente.getId());
         try {
             for (EventPayload ev : events) {
                 EventStoreEntity entity;
-                entity = new EventStoreEntity(idContoCorrente.id(), ev.eventType(), mapper.writeValueAsString(ev),
+                entity = new EventStoreEntity(idContoCorrente.getId(), ev.eventType(), mapper.writeValueAsString(ev),
                         nextSequence);
                 entity.persist();
                 nextSequence += 1;

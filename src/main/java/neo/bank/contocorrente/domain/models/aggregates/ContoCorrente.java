@@ -55,7 +55,7 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
     public static ContoCorrente apri(GeneratoreIdService generatoreIdService, GeneratoreCoordinateBancarieService generatoreCoordinateBancarie, AnagraficaClienteService anagraficaClienteService, UsernameCliente usernameCliente) {
         
         if(!anagraficaClienteService.richiediVerificaCliente(usernameCliente)) {
-            throw new BusinessRuleException(String.format("Il cliente [%s] per cui e' stato richiesta la creazione del conto non esiste", usernameCliente.username()));
+            throw new BusinessRuleException(String.format("Il cliente [%s] per cui e' stato richiesta la creazione del conto non esiste", usernameCliente.getUsername()));
         }
         IdContoCorrente idConto =generatoreIdService.genera();
         CoordinateBancarie coordinateBancarie = generatoreCoordinateBancarie.genera();
@@ -101,7 +101,7 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
         if(Math.abs(saldoDisponibile) < importAbs) {
           throw new BusinessRuleException(String.format("Importo [%s] non disponibile", importAbs));  
         }
-        double totaleBonificiOggi = transazioniService.richiediTotaleBonificiUscita(coordinateBancarie.iban(), LocalDate.now(), LocalDate.now());
+        double totaleBonificiOggi = transazioniService.richiediTotaleBonificiUscita(coordinateBancarie.getIban(), LocalDate.now(), LocalDate.now());
         if(sogliaBonificoGiornaliera < totaleBonificiOggi + importAbs) {
             throw new BusinessRuleException("Impossibile inviare il bonifico: raggiunto il limite giornaliero");  
         }
@@ -109,13 +109,13 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
         YearMonth meseCorrente = YearMonth.now();
         LocalDate primoGiornoDelMeseCorrente = meseCorrente.atDay(1);
         LocalDate ultimoGiornoDelMeseCorrente = meseCorrente.atEndOfMonth();
-        double totaleBonificQuestoMese = transazioniService.richiediTotaleBonificiUscita(coordinateBancarie.iban(), primoGiornoDelMeseCorrente, ultimoGiornoDelMeseCorrente);
+        double totaleBonificQuestoMese = transazioniService.richiediTotaleBonificiUscita(coordinateBancarie.getIban(), primoGiornoDelMeseCorrente, ultimoGiornoDelMeseCorrente);
         if(sogliaBonificoMensile < totaleBonificQuestoMese + importAbs) {
             throw new BusinessRuleException("Impossibile inviare il bonifico: raggiunto il limite mensile");  
         }
         IdOperazione idOperazione = new IdOperazione(UUID.randomUUID().toString());
         LocalDateTime dataOperazione = LocalDateTime.now(ZoneOffset.UTC);
-        events(new BonificoPredisposto(coordinateBancarie.iban(), ibanDestinatario, importo,  causale, idOperazione, dataOperazione));
+        events(new BonificoPredisposto(coordinateBancarie.getIban(), ibanDestinatario, importo,  causale, idOperazione, dataOperazione));
         return idOperazione;
     }
 
@@ -130,7 +130,7 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
 
     public void verificaAccessoCliente(UsernameCliente usernameCliente) {
         if( !intestatario.equals(usernameCliente)){
-            throw new BusinessRuleException(String.format("Accesso al conto non autorizzato per il cliente [%s]", usernameCliente.username()));
+            throw new BusinessRuleException(String.format("Accesso al conto non autorizzato per il cliente [%s]", usernameCliente.getUsername()));
         }
     }
 
@@ -141,37 +141,37 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
     }
 
     private void apply(ContoCorrenteAperto event) {
-        this.intestatario = event.usernameCliente();
-        this.coordinateBancarie = event.coordinateBancarie();
-        this.dataApertura = event.dataApertura();
-        this.idContoCorrente = event.idContoCorrente();
-        this.saldoDisponibile = event.saldoDisponibile();
-        this.saldoContabile = event.saldoDisponibile();
+        this.intestatario = event.getUsernameCliente();
+        this.coordinateBancarie = event.getCoordinateBancarie();
+        this.dataApertura = event.getDataApertura();
+        this.idContoCorrente = event.getIdContoCorrente();
+        this.saldoDisponibile = event.getSaldoDisponibile();
+        this.saldoContabile = event.getSaldoContabile();
     }
 
     private void apply(SogliaBonificoGiornalieraImpostata event) {
-        sogliaBonificoGiornaliera = event.nuovaSogliaBonifico();
+        sogliaBonificoGiornaliera = event.getNuovaSogliaBonifico();
     }
 
     private void apply(SogliaBonificoMensileImpostata event) {
-        sogliaBonificoMensile = event.nuovaSogliaBonifico();
+        sogliaBonificoMensile = event.getNuovaSogliaBonifico();
     }
 
     private void apply(BonificoPredisposto event) {
-        saldoDisponibile += (event.importo() * -1 );   
+        saldoDisponibile += (event.getImporto() * -1 );   
 
     }
 
     private void apply(SaldoContabileAggiornato event) {
-        saldoContabile += event.importo();   
+        saldoContabile += event.getImporto();   
     }
 
     private void apply(SaldoDisponibileAggiornato event) {
-        saldoDisponibile += event.importo();   
+        saldoDisponibile += event.getImporto();   
     }
 
     private void apply(CartaAssociata event) {
-        carteAssociate.add(event.numeroCarta());   
+        carteAssociate.add(event.getNumeroCarta());   
     }
 
     @Override
