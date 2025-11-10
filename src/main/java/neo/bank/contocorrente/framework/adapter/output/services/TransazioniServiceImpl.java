@@ -41,8 +41,7 @@ public class TransazioniServiceImpl implements TransazioniService{
 
     @Override
     public void cancellaTransazione(IdOperazione idOperazione) {
-        Transazione transazione = transazioniPrjRepo.recuperaDaIdOperazione(idOperazione);
-        transazioniPrjRepo.cancella(transazione); 
+        transazioniPrjRepo.cancellaDaIdOperazione(idOperazione); 
     }
 
 

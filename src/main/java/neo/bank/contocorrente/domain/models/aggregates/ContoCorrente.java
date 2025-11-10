@@ -6,7 +6,6 @@ import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -26,7 +25,6 @@ import neo.bank.contocorrente.domain.models.vo.DataApertura;
 import neo.bank.contocorrente.domain.models.vo.DataChiusura;
 import neo.bank.contocorrente.domain.models.vo.Iban;
 import neo.bank.contocorrente.domain.models.vo.IdContoCorrente;
-import neo.bank.contocorrente.domain.models.vo.IdOperazione;
 import neo.bank.contocorrente.domain.models.vo.NumeroCarta;
 import neo.bank.contocorrente.domain.models.vo.UsernameCliente;
 import neo.bank.contocorrente.domain.services.AnagraficaClienteService;
@@ -93,7 +91,7 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
         events(new CartaAssociata(numeroCarta));
     }
 
-    public IdOperazione predisponiBonifico(Iban ibanDestinatario, String causale, double importo, UsernameCliente clienteRichiedente, TransazioniService transazioniService) {
+    public void predisponiBonifico(Iban ibanDestinatario, String causale, double importo, UsernameCliente clienteRichiedente, TransazioniService transazioniService) {
         
         verificaAccessoCliente(clienteRichiedente);
         verificaContoChiuso();
@@ -113,10 +111,7 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
         if(sogliaBonificoMensile < totaleBonificQuestoMese + importAbs) {
             throw new BusinessRuleException("Impossibile inviare il bonifico: raggiunto il limite mensile");  
         }
-        IdOperazione idOperazione = new IdOperazione(UUID.randomUUID().toString());
-        LocalDateTime dataOperazione = LocalDateTime.now(ZoneOffset.UTC);
-        events(new BonificoPredisposto(coordinateBancarie.getIban(), ibanDestinatario, importo,  causale, idOperazione, dataOperazione));
-        return idOperazione;
+        events(new BonificoPredisposto(coordinateBancarie.getIban(), ibanDestinatario, importo,  causale));
     }
 
 
@@ -158,7 +153,7 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
     }
 
     private void apply(BonificoPredisposto event) {
-        saldoDisponibile += (event.getImporto() * -1 );   
+        // saldoDisponibile += (event.getImporto() * -1 );   
 
     }
 

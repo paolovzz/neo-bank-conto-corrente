@@ -58,6 +58,11 @@ public class TransazioneProjectionRepositoryImpl implements PanacheMongoReposito
     }
 
     @Override
+    public void cancellaDaIdOperazione(IdOperazione idOperazione) {
+        delete("idOperazione", idOperazione.getId());
+    }
+
+    @Override
     public double calcolaTotaleBonificiUscita(Iban iban, LocalDateTime dataInf, LocalDateTime dataSup) {
 
         List<Bson> pipeline = List.of(

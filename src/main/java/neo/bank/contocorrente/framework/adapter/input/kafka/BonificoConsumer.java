@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.smallrye.reactive.messaging.annotations.Blocking;
 import io.smallrye.reactive.messaging.kafka.api.IncomingKafkaRecordMetadata;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -17,12 +18,11 @@ import lombok.extern.slf4j.Slf4j;
 import neo.bank.contocorrente.application.ContoCorrenteUseCase;
 import neo.bank.contocorrente.application.ports.input.commands.AggiornaSaldoCmd;
 import neo.bank.contocorrente.application.ports.input.commands.RipristinaSaldoCmd;
-import neo.bank.contocorrente.domain.models.vo.Iban;
 import neo.bank.contocorrente.domain.models.vo.IdOperazione;
 
 @ApplicationScoped
 @Slf4j
-public class SistemaEsternoConsumer {
+public class BonificoConsumer {
 
     @Inject
     private ObjectMapper mapper;
@@ -30,32 +30,27 @@ public class SistemaEsternoConsumer {
     @Inject
     private ContoCorrenteUseCase app;
 
-    private static final String EVENT_OWNER = "SISTEMA_ESTERNO";
-    private static final String CONTROLLI_SUPERATI_EVENT_NAME = "ControlliSuperati";
-    private static final String CONTROLLI_NON_SUPERATI_EVENT_NAME = "ControlliNonSuperati";
+    private static final String EVENT_OWNER = "BONIFICO";
+    private static final String BONIFICO_CONVALIDATO_EVENT_NAME = "BonificoConvalidato";
+    private static final String CONTROLLI_NON_SUPERATI_EVENT_NAME = "BonificoAnnullato";
 
-    @Incoming("sistema-esterno-notifications")
+    @Incoming("bonifico-notifications")
+    @Blocking
     public CompletionStage<Void> consume(Message<String> msg) {
         var metadata = msg.getMetadata(IncomingKafkaRecordMetadata.class).orElseThrow();
         String eventType = new String(metadata.getHeaders().lastHeader("eventType").value(), StandardCharsets.UTF_8);
         String aggregateName = new String(metadata.getHeaders().lastHeader("aggregateName").value(),
                 StandardCharsets.UTF_8);
         log.info("INCOMING:\n- EventType => {}\n- AggregateName => {}", eventType, aggregateName);
-         String payload = msg.getPayload();
-          JsonNode json = convertToJsonNode(payload);
         if (aggregateName.equals(EVENT_OWNER)) {
-            IdOperazione idOperazione = new IdOperazione(json.get("idOperazione").asText());
-            Iban ibanMittente = new Iban(json.get("ibanMittente").asText());
-            double importo = json.get("importo").asDouble();
+            IdOperazione idOperazione = new IdOperazione((String) metadata.getKey());
             switch (eventType) {
-                case CONTROLLI_SUPERATI_EVENT_NAME:{
-                    String ibanDestinatario = json.get("ibanDestinatario").asText();
-                    String causale = json.get("causale").asText();
-                    app.aggiornaSaldo(new AggiornaSaldoCmd(ibanMittente, idOperazione, new Iban(ibanDestinatario), causale, importo));
+                case BONIFICO_CONVALIDATO_EVENT_NAME:{
+                    app.applicaBonifico(new AggiornaSaldoCmd(idOperazione));
                     break;
                 }
                 case CONTROLLI_NON_SUPERATI_EVENT_NAME:{
-                    app.ripristinaSaldo(new RipristinaSaldoCmd(ibanMittente, idOperazione, importo));
+                    app.ripristinaSaldo(new RipristinaSaldoCmd(idOperazione));
                     break;
                 }
                 default:

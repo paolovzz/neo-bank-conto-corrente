@@ -17,4 +17,5 @@ public interface TransazioneProjectionRepositoryPort {
     public void cancella(Transazione transazione);
     public double calcolaTotaleBonificiUscita(Iban iban, LocalDateTime dataInf, LocalDateTime dataSup);
     public RispostaPaginata<Transazione> recuperaTransazioni(IdContoCorrente idCC, LocalDateTime dataInf, LocalDateTime dataSup, Double importoMin, Double importoMax, TipologiaFlusso tipologiaFlusso, int numeroPagina, int dimensionePagina);
+    void cancellaDaIdOperazione(IdOperazione idOperazione);
 }

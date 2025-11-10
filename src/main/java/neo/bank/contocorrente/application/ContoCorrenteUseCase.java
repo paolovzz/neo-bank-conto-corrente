@@ -8,6 +8,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import neo.bank.contocorrente.application.ports.input.commands.AggiornaSaldoCmd;
+import neo.bank.contocorrente.application.ports.input.commands.AggiornaSaldoDisponibileCmd;
 import neo.bank.contocorrente.application.ports.input.commands.AssociaCartaCmd;
 import neo.bank.contocorrente.application.ports.input.commands.CreaContoCorrenteCmd;
 import neo.bank.contocorrente.application.ports.input.commands.ImpostaSogliaBonificoGiornalieraCmd;
@@ -20,12 +21,13 @@ import neo.bank.contocorrente.application.ports.output.ContoCorrenteOutputPort;
 import neo.bank.contocorrente.application.ports.output.IbanProjectionRepositoryPort;
 import neo.bank.contocorrente.domain.models.aggregates.ContoCorrente;
 import neo.bank.contocorrente.domain.models.events.TipologiaFlusso;
+import neo.bank.contocorrente.domain.models.vo.DatiBonifico;
 import neo.bank.contocorrente.domain.models.vo.IdContoCorrente;
-import neo.bank.contocorrente.domain.models.vo.IdOperazione;
 import neo.bank.contocorrente.domain.models.vo.IdTransazione;
 import neo.bank.contocorrente.domain.models.vo.RispostaPaginata;
 import neo.bank.contocorrente.domain.models.vo.Transazione;
 import neo.bank.contocorrente.domain.services.AnagraficaClienteService;
+import neo.bank.contocorrente.domain.services.BonificoService;
 import neo.bank.contocorrente.domain.services.GeneratoreCoordinateBancarieService;
 import neo.bank.contocorrente.domain.services.GeneratoreIdService;
 import neo.bank.contocorrente.domain.services.TransazioniService;
@@ -51,6 +53,8 @@ public class ContoCorrenteUseCase {
 
     @Inject
     private TransazioniService transazioniService;
+
+    @Inject BonificoService operazioneService;
 
 
     public void creaContoCorrente(CreaContoCorrenteCmd cmd) {
@@ -109,41 +113,51 @@ public class ContoCorrenteUseCase {
         log.info("Comando [predisponiBonifico] in esecuzione...");
         IdContoCorrente idContoCorrente = ibanProjRepoPort.recuperaDaIban(cmd.getIbanMittente());
         ContoCorrente cc = ccOutputPort.recuperaDaId(idContoCorrente);
-        IdOperazione idOperazione = cc.predisponiBonifico(cmd.getIbanDestinatario(), cmd.getCausale(), cmd.getImporto(), cmd.getUsernameCliente(), transazioniService);
+        cc.predisponiBonifico(cmd.getIbanDestinatario(), cmd.getCausale(), cmd.getImporto(), cmd.getUsernameCliente(), transazioniService);
         ccOutputPort.salva(cc);
-        transazioniService.creaTransazione(new Transazione(new IdTransazione(UUID.randomUUID().toString()), idContoCorrente, idOperazione, cmd.getImporto(), cmd.getIbanDestinatario(), LocalDateTime.now(ZoneOffset.UTC), cmd.getCausale(), TipologiaFlusso.ADDEBITO));
         log.info("Comando [predisponiBonifico] terminato...");
     }
 
-    public void aggiornaSaldo(AggiornaSaldoCmd cmd) {
+    public void aggiornaSaldoDisponibile(AggiornaSaldoDisponibileCmd cmd) {
+        log.info("Comando [aggiornaSaldoDisponibile] in esecuzione...");
+        ContoCorrente cc = ccOutputPort.recuperaDaId(cmd.getIdContoCorrente());
+        cc.aggiornaSaldoDisponibile(cmd.getImporto());
+        ccOutputPort.salva(cc);
+        log.info("Comando [aggiornaSaldoDisponibile] terminato...");
+    }
+
+    public void applicaBonifico(AggiornaSaldoCmd cmd) {
         log.info("Comando [aggiornaSaldo] in esecuzione...");
         
-        IdContoCorrente idCCAccredito = ibanProjRepoPort.recuperaDaIban(cmd.getIbanDestinatario());
-        double importo = Math.abs(cmd.getImporto());
+        DatiBonifico datiOperazione = operazioneService.recuperaDettaglioBonifico(cmd.getIdOperazione());
+        IdContoCorrente idCCAccredito = ibanProjRepoPort.recuperaDaIban(datiOperazione.getIbanDestinatario());
+        double importo = Math.abs(datiOperazione.getImporto());
         if(idCCAccredito != null) {
             log.info("Iban presente nel sistema bancario. Aggiornamento saldo del destinatario..");
             ContoCorrente ccAccredito = ccOutputPort.recuperaDaId(idCCAccredito);
             ccAccredito.aggiornaSaldoContabile(importo);
             ccAccredito.aggiornaSaldoDisponibile(importo);
             ccOutputPort.salva(ccAccredito);
-            transazioniService.creaTransazione(new Transazione(new IdTransazione(UUID.randomUUID().toString()), idCCAccredito, cmd.getIdOperazione(), cmd.getImporto(), cmd.getIbanMittente(), LocalDateTime.now(ZoneOffset.UTC), cmd.getCausale(), TipologiaFlusso.ACCREDITO));
+            transazioniService.creaTransazione(new Transazione(new IdTransazione(UUID.randomUUID().toString()), idCCAccredito, datiOperazione.getIdOperazione(), datiOperazione.getImporto(), datiOperazione.getIbanMittente(), LocalDateTime.now(ZoneOffset.UTC), datiOperazione.getCausale(), TipologiaFlusso.ACCREDITO));
         }
-        IdContoCorrente idCCAddebito = ibanProjRepoPort.recuperaDaIban(cmd.getIbanMittente());
+        IdContoCorrente idCCAddebito = ibanProjRepoPort.recuperaDaIban(datiOperazione.getIbanMittente());
         if(idCCAddebito != null) { 
             log.info("Iban presente nel sistema bancario. Aggiornamento saldo del mittente..");
             ContoCorrente ccAddebito = ccOutputPort.recuperaDaId(idCCAddebito);
-            ccAddebito.aggiornaSaldoContabile(cmd.getImporto() * -1);
+            ccAddebito.aggiornaSaldoContabile(datiOperazione.getImporto() * -1);
             ccOutputPort.salva(ccAddebito);
+            transazioniService.creaTransazione(new Transazione(new IdTransazione(UUID.randomUUID().toString()), idCCAddebito, datiOperazione.getIdOperazione(), datiOperazione.getImporto(), datiOperazione.getIbanDestinatario(), LocalDateTime.now(ZoneOffset.UTC), datiOperazione.getCausale(), TipologiaFlusso.ADDEBITO));
             log.info("Comando [aggiornaSaldo] terminato...");
         }
     }
 
     public void ripristinaSaldo(RipristinaSaldoCmd cmd) {
         log.info("Comando [ripristinaSaldo] in esecuzione...");
-        IdContoCorrente idCCAddebito = ibanProjRepoPort.recuperaDaIban(cmd.getIbanMittente());
+        DatiBonifico datiOperazione = operazioneService.recuperaDettaglioBonifico(cmd.getIdOperazione());
+        IdContoCorrente idCCAddebito = ibanProjRepoPort.recuperaDaIban(datiOperazione.getIbanMittente());
         ContoCorrente ccAddebito = ccOutputPort.recuperaDaId(idCCAddebito);
         transazioniService.cancellaTransazione(cmd.getIdOperazione());
-        ccAddebito.aggiornaSaldoDisponibile(Math.abs(cmd.getImporto()));
+        ccAddebito.aggiornaSaldoDisponibile(Math.abs(datiOperazione.getImporto()));
         ccOutputPort.salva(ccAddebito);
         log.info("Comando [ripristinaSaldo] terminato...");
     }
