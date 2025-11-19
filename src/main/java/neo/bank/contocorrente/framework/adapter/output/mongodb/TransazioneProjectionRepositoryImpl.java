@@ -25,15 +25,15 @@ import neo.bank.contocorrente.domain.models.vo.Iban;
 import neo.bank.contocorrente.domain.models.vo.IdContoCorrente;
 import neo.bank.contocorrente.domain.models.vo.IdOperazione;
 import neo.bank.contocorrente.domain.models.vo.IdTransazione;
-import neo.bank.contocorrente.domain.models.vo.RispostaPaginata;
-import neo.bank.contocorrente.domain.models.vo.Transazione;
+import neo.bank.contocorrente.domain.models.vo.VORispostaPaginata;
+import neo.bank.contocorrente.domain.models.vo.VOTransazione;
 import neo.bank.contocorrente.framework.adapter.output.mongodb.entities.TransazioneProjectionEntity;
 
 @ApplicationScoped
 @Slf4j
 public class TransazioneProjectionRepositoryImpl implements PanacheMongoRepositoryBase<TransazioneProjectionEntity, String>, TransazioneProjectionRepositoryPort {@Override
     
-    public void salva(Transazione transazione) {
+    public void salva(VOTransazione transazione) {
                 log.info("Registro la transazione creata nella projection");
 
         String idTransazione = transazione.getIdTransazione().getId();
@@ -48,12 +48,12 @@ public class TransazioneProjectionRepositoryImpl implements PanacheMongoReposito
     }
 
     @Override
-    public Transazione recuperaDaIdOperazione(IdOperazione idOperazione) {
+    public VOTransazione recuperaDaIdOperazione(IdOperazione idOperazione) {
         return toVO(find("idOperazione", idOperazione.getId()).singleResult());
     }
 
     @Override
-    public void cancella(Transazione transazione) {
+    public void cancella(VOTransazione transazione) {
         delete(toEntity(transazione));
     }
 
@@ -74,9 +74,7 @@ public class TransazioneProjectionRepositoryImpl implements PanacheMongoReposito
             )),
             Aggregates.group(null, Accumulators.sum("totale", "$importo"))
         );
-
         Document result = mongoCollection().aggregate(pipeline, Document.class).first();
-
         if (result != null && result.containsKey("totale")) {
             Object totale = result.get("totale");
             if (totale instanceof Number) {
@@ -88,7 +86,7 @@ public class TransazioneProjectionRepositoryImpl implements PanacheMongoReposito
 
 
     @Override
-    public RispostaPaginata<Transazione> recuperaTransazioni(IdContoCorrente idCC, LocalDateTime dataInf, LocalDateTime dataSup,
+    public VORispostaPaginata<VOTransazione> recuperaTransazioni(IdContoCorrente idCC, LocalDateTime dataInf, LocalDateTime dataSup,
             Double importoMin, Double importoMax, TipologiaFlusso tipologiaFlusso, int numeroPagina,
             int dimensionePagina) {
 
@@ -111,21 +109,21 @@ public class TransazioneProjectionRepositoryImpl implements PanacheMongoReposito
             .limit(dimensionePagina)
             .into(new ArrayList<>());
         
-        return new RispostaPaginata<>(transazioni.stream()
+        return new VORispostaPaginata<>(transazioni.stream()
             .map(this::toVO)
             .toList(), numeroPagina, dimensionePagina, totRisultati);
     }
     
 
-    private Transazione toVO(TransazioneProjectionEntity entity) {
+    private VOTransazione toVO(TransazioneProjectionEntity entity) {
         if(entity == null)
             return null;
         else {
-            return new Transazione(new IdTransazione(entity.getIdTransazione()),new IdContoCorrente(entity.getIdContoCorrente()), new IdOperazione(entity.getIdOperazione()), entity.getImporto(), new Iban(entity.getIban()), entity.getDataCreazione(), entity.getCausale(), entity.getTipologiaFlusso());
+            return new VOTransazione(new IdTransazione(entity.getIdTransazione()),new IdContoCorrente(entity.getIdContoCorrente()), new IdOperazione(entity.getIdOperazione()), entity.getImporto(), new Iban(entity.getIban()), entity.getDataCreazione(), entity.getCausale(), entity.getTipologiaFlusso());
         }
     }
 
-    private TransazioneProjectionEntity toEntity(Transazione vo) {
+    private TransazioneProjectionEntity toEntity(VOTransazione vo) {
         if(vo == null)
             return null;
         else {

@@ -5,7 +5,7 @@ import neo.bank.contocorrente.domain.models.vo.Iban;
 import neo.bank.contocorrente.domain.models.vo.UsernameCliente;
 
 @Value
-public class ImpostaSogliaBonificoMensileCmd {
+public class ImpostaSogliaBonificoCmd {
     
     private UsernameCliente usernameCliente;
     private Iban iban;

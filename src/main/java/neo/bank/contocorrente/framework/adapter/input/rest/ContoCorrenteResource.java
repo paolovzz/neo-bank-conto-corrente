@@ -2,134 +2,103 @@ package neo.bank.contocorrente.framework.adapter.input.rest;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotAuthorizedException;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import neo.bank.contocorrente.application.ContoCorrenteUseCase;
 import neo.bank.contocorrente.application.ports.input.commands.CreaContoCorrenteCmd;
-import neo.bank.contocorrente.application.ports.input.commands.ImpostaSogliaBonificoGiornalieraCmd;
-import neo.bank.contocorrente.application.ports.input.commands.ImpostaSogliaBonificoMensileCmd;
+import neo.bank.contocorrente.application.ports.input.commands.ImpostaSogliaBonificoCmd;
 import neo.bank.contocorrente.application.ports.input.commands.PredisponiBonificoCmd;
 import neo.bank.contocorrente.application.ports.input.commands.RecuperaContoCorrenteCmd;
 import neo.bank.contocorrente.application.ports.input.commands.RecuperaTransazioniCmd;
 import neo.bank.contocorrente.domain.models.aggregates.ContoCorrente;
-import neo.bank.contocorrente.domain.models.events.TipologiaFlusso;
 import neo.bank.contocorrente.domain.models.vo.Iban;
-import neo.bank.contocorrente.domain.models.vo.RispostaPaginata;
-import neo.bank.contocorrente.domain.models.vo.Transazione;
 import neo.bank.contocorrente.domain.models.vo.UsernameCliente;
-import neo.bank.contocorrente.framework.adapter.input.rest.request.ImpostaSogliaBonificoRequest;
-import neo.bank.contocorrente.framework.adapter.input.rest.request.InviaBonificoRequest;
-import neo.bank.contocorrente.framework.adapter.input.rest.response.ContoCorrenteInfoResponse;
-import neo.bank.contocorrente.framework.adapter.input.rest.response.TransazioneResponse;
+import neo.bank.contocorrente.domain.models.vo.VORispostaPaginata;
+import neo.bank.contocorrente.domain.models.vo.VOTransazione;
+import neo.bank.contocorrente.framework.adapter.input.rest.api.ContoCorrenteApi;
+import neo.bank.contocorrente.framework.adapter.input.rest.model.ContoCorrenteInfoResponse;
+import neo.bank.contocorrente.framework.adapter.input.rest.model.ImpostaSogliaBonificoRequest;
+import neo.bank.contocorrente.framework.adapter.input.rest.model.PredisponiBonificoRequest;
+import neo.bank.contocorrente.framework.adapter.input.rest.model.RispostaPaginataTransazioni;
+import neo.bank.contocorrente.framework.adapter.input.rest.model.TipologiaFlussoEnum;
+import neo.bank.contocorrente.framework.adapter.input.rest.model.TransazioneResponse;
 
-@Path("/cc")
 @ApplicationScoped
 @Slf4j
-public class ContoCorrenteResource {
+public class ContoCorrenteResource implements ContoCorrenteApi {
 
     @Inject
     private ContoCorrenteUseCase app;
 
-    @Context
-    private HttpHeaders headers;
-
-    @Path("/{iban}")
-    @GET
-    @Produces(value = MediaType.APPLICATION_JSON)
-    public Response recuperaContoCorrenteDaIban(@PathParam(value = "iban") String iban) {
-
-        String username = recuperaUtenteAutenticato();
-        ContoCorrente contoCorrente = app.recuperaContoCorrenteDaIban(new RecuperaContoCorrenteCmd(new UsernameCliente(username), new Iban(iban)));
-        ContoCorrenteInfoResponse bodyResponse = new ContoCorrenteInfoResponse(contoCorrente);
-        return Response.ok(bodyResponse).build();
+    @Override
+    public Response creaContoCorrente(String xAuthenticatedUser) {
+        log.info("Richiesta creazione conto corrente: [{}]", xAuthenticatedUser);
+        app.creaContoCorrente(new CreaContoCorrenteCmd(new UsernameCliente(xAuthenticatedUser)));
+        return Response.status(201).build();
     }
 
-    // @Path("/{iban}/verifica")
-    // @GET
-    // @Produces(value = MediaType.APPLICATION_JSON)
-    // public Response verificaContoCorrente(@PathParam(value = "iban") String iban) {
+    @Override
+    public Response impostaSogliaBonificoGiornaliera(String xAuthenticatedUser,
+            ImpostaSogliaBonificoRequest request) {
 
-    //     String username = recuperaUtenteAutenticato();
-    //     app.recuperaContoCorrenteDaIban(new RecuperaContoCorrenteCmd(new UsernameCliente(username), new Iban(iban)));
-    //     return Response.ok().build();
-    // }
-
-    @POST
-    @Produces(value = MediaType.APPLICATION_JSON)
-    public Response creaContoCorrente() {
-        String username = recuperaUtenteAutenticato();
-        app.creaContoCorrente(new CreaContoCorrenteCmd(new UsernameCliente(username)));
-        return Response.ok().build();
-    }
-
-    @Path("/soglia-bonifico-giornaliera")
-    @PUT
-    @Produces(value = MediaType.APPLICATION_JSON)
-    public Response impostaSogliaBonificoGiornaliera( ImpostaSogliaBonificoRequest request) {
-        String username = recuperaUtenteAutenticato();
-        app.impostaSogliaBonificoGiornaliera(new ImpostaSogliaBonificoGiornalieraCmd(new UsernameCliente(username), new Iban(request.getIban()), request.getNuovaSoglia()));
+        log.info("Richiesto aggiornamento soglia bonifico giornaliera : [{}] - {}", xAuthenticatedUser, request);
+        app.impostaSogliaBonificoGiornaliera(new ImpostaSogliaBonificoCmd(new UsernameCliente(xAuthenticatedUser), new Iban(request.getIban()), request.getNuovaSoglia()));
         return Response.noContent().build();
     }
 
-    @Path("/soglia-bonifico-mensile")
-    @PUT
-    @Produces(value = MediaType.APPLICATION_JSON)
-    public Response impostaSogliaBonificoMensile(ImpostaSogliaBonificoRequest request) {
-        String username = recuperaUtenteAutenticato();
-        app.impostaSogliaBonificoMensile(new ImpostaSogliaBonificoMensileCmd(new UsernameCliente(username), new Iban(request.getIban()), request.getNuovaSoglia()));
+    @Override
+    public Response impostaSogliaBonificoMensile(String xAuthenticatedUser, ImpostaSogliaBonificoRequest request) {
+        
+        log.info("Richiesto aggiornamento soglia bonifico mensile : [{}] - {}", xAuthenticatedUser, request);
+        app.impostaSogliaBonificoMensile(new ImpostaSogliaBonificoCmd(new UsernameCliente(xAuthenticatedUser), new Iban(request.getIban()), request.getNuovaSoglia()));
         return Response.noContent().build();
     }
-    
-    @Path("/predisponi-bonifico")
-    @POST
-    @Produces(value = MediaType.APPLICATION_JSON)
-    public Response inviaBonifico(InviaBonificoRequest request) {
 
-        String username = recuperaUtenteAutenticato();
-        app.predisponiBonifico(new PredisponiBonificoCmd(new UsernameCliente(username), new Iban(request.getIbanMittente()), request.getImporto(), request.getCausale(), new Iban(request.getIbanDestinatario())));
+    @Override
+    public Response predisponiBonifico(String xAuthenticatedUser, PredisponiBonificoRequest request) {
+        
+        log.info("Richiesta predisposizione bonifico : [{}] - {}", xAuthenticatedUser, request);
+        app.predisponiBonifico(new PredisponiBonificoCmd(new UsernameCliente(xAuthenticatedUser), new Iban(request.getIbanMittente()), request.getImporto(), request.getCausale(), new Iban(request.getIbanDestinatario())));
         return Response.accepted().build();
     }
 
-
-    @Path("/{iban}/transazioni")
-    @GET
-    @Produces(value = MediaType.APPLICATION_JSON)
-    public Response recuperaTransazioni(
-        @PathParam(value = "iban") String iban, 
-        @QueryParam(value = "dataCreazioneMin" ) LocalDate dataCreazioneMin,
-        @QueryParam(value = "dataCreazioneMax" ) LocalDate dataCreazioneMax,
-        @QueryParam(value = "tipologiaFlusso" ) TipologiaFlusso tipologiaFlusso,
-        @QueryParam(value = "importoMin" ) Double importoMin,
-        @QueryParam(value = "importoMax" ) Double importoMax,
-        @QueryParam(value = "numeroPagina") @DefaultValue("0") Integer numeroPagina,
-        @QueryParam(value = "dimensionePagina") @DefaultValue("10") Integer dimensionePagina
-    ) {
-
-        String username = recuperaUtenteAutenticato();
-        RispostaPaginata<Transazione> rp = app.recuperaTransazioni(new RecuperaTransazioniCmd(new UsernameCliente(username), new Iban(iban), dataCreazioneMin != null ? dataCreazioneMin.atStartOfDay() : null, dataCreazioneMax != null ? dataCreazioneMax.atTime(LocalTime.MAX): null, importoMin, importoMax, tipologiaFlusso, numeroPagina, dimensionePagina));
-        RispostaPaginata<TransazioneResponse> risultato = new RispostaPaginata<>(rp.getResult().stream().map(TransazioneResponse::new).toList(), rp.getNumeroPagina(), rp.getDimensionePagina(), rp.getTotaleRisultati());
-        return Response.ok(risultato).build();
+    @Override
+    public Response recuperaContoCorrenteDaIban(String xAuthenticatedUser, String iban) {
+        
+        log.info("Richiesta recupero info CC da iban  : [{}] - {}", xAuthenticatedUser, iban);
+        ContoCorrente contoCorrente = app.recuperaContoCorrenteDaIban(new RecuperaContoCorrenteCmd(new UsernameCliente(xAuthenticatedUser), new Iban(iban)));
+        ContoCorrenteInfoResponse bodyResponse = ContoCorrenteInfoResponse.builder()
+                                                    .abi(contoCorrente.getCoordinateBancarie().getAbi().getCodice())
+                                                    .bic(contoCorrente.getCoordinateBancarie().getBic().getCodice())
+                                                    .cab(contoCorrente.getCoordinateBancarie().getCab().getCodice())
+                                                    .iban(contoCorrente.getCoordinateBancarie().getIban().getCodice())
+                                                    .numeroConto(contoCorrente.getCoordinateBancarie().getNumeroConto().getNumero())
+                                                    .saldoContabile(contoCorrente.getSaldoContabile())
+                                                    .saldoDisponibile(contoCorrente.getSaldoDisponibile())
+                                                    .sogliaBonificiGiornaliera(contoCorrente.getSogliaBonificoGiornaliera())
+                                                    .sogliaBonificiMensile(contoCorrente.getSogliaBonificoMensile())
+                                                    .build();
+        return Response.ok(bodyResponse).build();
     }
 
-    private String recuperaUtenteAutenticato() {
-        String username = headers.getHeaderString("X-Authenticated-User");
-        if (username == null)
-            throw new NotAuthorizedException("Richiesta non autenticata");
-        return username;
+    @Override
+    public Response recuperaTransazioni(String xAuthenticatedUser, String iban, LocalDate dataCreazioneMin,
+            LocalDate dataCreazioneMax, TipologiaFlussoEnum tipologiaFlusso, Double importoMin, Double importoMax,
+            Integer numeroPagina, Integer dimensionePagina) {
+
+        log.info("Richiesta recupero trandazioni  : [{}]", xAuthenticatedUser);
+                 VORispostaPaginata<VOTransazione> rp = app.recuperaTransazioni(new RecuperaTransazioniCmd(new UsernameCliente(xAuthenticatedUser), new Iban(iban), dataCreazioneMin != null ? dataCreazioneMin.atStartOfDay() : null, dataCreazioneMax != null ? dataCreazioneMax.atTime(LocalTime.MAX): null, importoMin, importoMax, neo.bank.contocorrente.domain.models.events.TipologiaFlusso.valueOf(tipologiaFlusso.name()), numeroPagina, dimensionePagina));
+                List<TransazioneResponse> contenuto = rp.getResult().stream().map( t -> {
+                    TransazioneResponse transazioneResponse = new TransazioneResponse();
+
+                    return transazioneResponse;
+                }).toList();
+        return Response.ok(new RispostaPaginataTransazioni(rp.getNumeroPagina(), rp.getDimensionePagina(), rp.getTotaleRisultati(), contenuto)).build();
     }
+
+    
 }

@@ -6,7 +6,7 @@ import lombok.Value;
 import neo.bank.contocorrente.domain.models.events.TipologiaFlusso;
 
 @Value
-public class Transazione {
+public class VOTransazione {
    
     private IdTransazione idTransazione;
     private IdContoCorrente idContoCorrente;

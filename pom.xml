@@ -139,6 +139,53 @@
                 </configuration>
             </plugin>
             <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <version>7.0.1</version>
+                <executions>
+                    <execution>
+                    <id>conto-corrente-server</id>
+                    <phase>process-sources</phase>
+                    <goals>
+                    <goal>generate</goal>
+                    </goals>
+                    <configuration>
+                    <inputSpec>
+                        ${project.basedir}/src/main/openapi-server/openapi.yaml
+                    </inputSpec>
+                    <generatorName>jaxrs-spec</generatorName>
+                    <apiPackage>neo.bank.contocorrente.framework.adapter.input.rest.api</apiPackage>
+                    <modelPackage>neo.bank.contocorrente.framework.adapter.input.rest.model</modelPackage>
+                    <output>${project.build.directory}/generated-sources/openapi</output>
+                    <addCompileSourceRoot>true</addCompileSourceRoot>
+                    <skipIfSpecIsUnchanged>true</skipIfSpecIsUnchanged>
+                    <typeMappings>
+                        <typeMapping>DateTime=Instant</typeMapping>
+                        <typeMapping>Date=LocalDate</typeMapping>
+                    </typeMappings>
+                    <importMappings>
+                    <importMapping>Instant=java.time.Instant</importMapping>
+                    <importMapping>LocalDate=java.time.LocalDate</importMapping>
+                    </importMappings>
+                    <configOptions>
+                    <sourceFolder>.</sourceFolder>
+                    <additionalModelTypeAnnotations>; @lombok.AllArgsConstructor;
+                                    @lombok.Builder;
+                                    @lombok.NoArgsConstructor; @lombok.Generated</additionalModelTypeAnnotations>
+                    <returnResponse>true</returnResponse>
+                    <interfaceOnly>true</interfaceOnly>
+                    <useMicroProfileOpenAPIAnnotations>true</useMicroProfileOpenAPIAnnotations>
+                    <useSwaggerAnnotations>false</useSwaggerAnnotations>
+                    <useTags>true</useTags>
+                    <useBeanValidation>false</useBeanValidation>
+                    <library>quarkus</library>
+                    <useJakartaEe>true</useJakartaEe>
+                    </configOptions>
+                    </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${surefire-plugin.version}</version>
                 <executions>

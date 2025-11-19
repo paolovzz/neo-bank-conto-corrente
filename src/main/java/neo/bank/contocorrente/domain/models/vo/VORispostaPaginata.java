@@ -5,7 +5,7 @@ import java.util.List;
 import lombok.Value;
 
 @Value
-public class RispostaPaginata<T> {
+public class VORispostaPaginata<T> {
     
     private List<T> result;
     private int numeroPagina;

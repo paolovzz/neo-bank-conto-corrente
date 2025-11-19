@@ -6,11 +6,13 @@ import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import neo.bank.contocorrente.domain.exceptions.AccessoNonAutorizzatoException;
 import neo.bank.contocorrente.domain.exceptions.BusinessRuleException;
 import neo.bank.contocorrente.domain.models.events.BonificoPredisposto;
 import neo.bank.contocorrente.domain.models.events.CartaAssociata;
@@ -29,13 +31,11 @@ import neo.bank.contocorrente.domain.models.vo.NumeroCarta;
 import neo.bank.contocorrente.domain.models.vo.UsernameCliente;
 import neo.bank.contocorrente.domain.services.AnagraficaClienteService;
 import neo.bank.contocorrente.domain.services.GeneratoreCoordinateBancarieService;
-import neo.bank.contocorrente.domain.services.GeneratoreIdService;
 import neo.bank.contocorrente.domain.services.TransazioniService;
 
 
 @Slf4j
 @Getter
-@AllArgsConstructor
 @NoArgsConstructor
 public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Applier  {
 
@@ -50,12 +50,12 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
     private DataChiusura dataChiusura;
     private UsernameCliente intestatario = null;
     private List<NumeroCarta> carteAssociate = new ArrayList<>();
-    public static ContoCorrente apri(GeneratoreIdService generatoreIdService, GeneratoreCoordinateBancarieService generatoreCoordinateBancarie, AnagraficaClienteService anagraficaClienteService, UsernameCliente usernameCliente) {
+    public static ContoCorrente apri(GeneratoreCoordinateBancarieService generatoreCoordinateBancarie, AnagraficaClienteService anagraficaClienteService, UsernameCliente usernameCliente) {
         
         if(!anagraficaClienteService.richiediVerificaCliente(usernameCliente)) {
             throw new BusinessRuleException(String.format("Il cliente [%s] per cui e' stato richiesta la creazione del conto non esiste", usernameCliente.getUsername()));
         }
-        IdContoCorrente idConto =generatoreIdService.genera();
+        IdContoCorrente idConto =new IdContoCorrente(UUID.randomUUID().toString());
         CoordinateBancarie coordinateBancarie = generatoreCoordinateBancarie.genera();
         DataApertura dataApertura = new DataApertura(LocalDateTime.now(ZoneOffset.UTC));
         double saldo = 0;
@@ -99,7 +99,8 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
         if(Math.abs(saldoDisponibile) < importAbs) {
           throw new BusinessRuleException(String.format("Importo [%s] non disponibile", importAbs));  
         }
-        double totaleBonificiOggi = transazioniService.richiediTotaleBonificiUscita(coordinateBancarie.getIban(), LocalDate.now(), LocalDate.now());
+        LocalDate oggi = LocalDate.now();
+        double totaleBonificiOggi = transazioniService.richiediTotaleBonificiUscita(coordinateBancarie.getIban(), oggi, oggi);
         if(sogliaBonificoGiornaliera < totaleBonificiOggi + importAbs) {
             throw new BusinessRuleException("Impossibile inviare il bonifico: raggiunto il limite giornaliero");  
         }
@@ -107,7 +108,8 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
         YearMonth meseCorrente = YearMonth.now();
         LocalDate primoGiornoDelMeseCorrente = meseCorrente.atDay(1);
         LocalDate ultimoGiornoDelMeseCorrente = meseCorrente.atEndOfMonth();
-        double totaleBonificQuestoMese = transazioniService.richiediTotaleBonificiUscita(coordinateBancarie.getIban(), primoGiornoDelMeseCorrente, ultimoGiornoDelMeseCorrente);
+        double totaleBonificQuestoMese = transazioniService.
+                                            richiediTotaleBonificiUscita(coordinateBancarie.getIban(), primoGiornoDelMeseCorrente, ultimoGiornoDelMeseCorrente);
         if(sogliaBonificoMensile < totaleBonificQuestoMese + importAbs) {
             throw new BusinessRuleException("Impossibile inviare il bonifico: raggiunto il limite mensile");  
         }
@@ -125,7 +127,7 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
 
     public void verificaAccessoCliente(UsernameCliente usernameCliente) {
         if( !intestatario.equals(usernameCliente)){
-            throw new BusinessRuleException(String.format("Accesso al conto non autorizzato per il cliente [%s]", usernameCliente.getUsername()));
+            throw new AccessoNonAutorizzatoException(usernameCliente.getUsername());
         }
     }
 

@@ -4,7 +4,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 import neo.bank.contocorrente.domain.exceptions.BusinessRuleException;
-import neo.bank.contocorrente.framework.adapter.input.rest.response.ErrorResponse;
+import neo.bank.contocorrente.framework.adapter.input.rest.model.ErrorResponse;
 
 @Provider
 public class BusinessRuleExceptionMapper implements ExceptionMapper<BusinessRuleException> {

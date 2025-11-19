@@ -1,18 +1,14 @@
 package neo.bank.contocorrente.application;
 
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.UUID;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import neo.bank.contocorrente.application.exceptions.ContoCorrenteNonTrovatoException;
 import neo.bank.contocorrente.application.ports.input.commands.AggiornaSaldoCmd;
 import neo.bank.contocorrente.application.ports.input.commands.AggiornaSaldoDisponibileCmd;
 import neo.bank.contocorrente.application.ports.input.commands.AssociaCartaCmd;
 import neo.bank.contocorrente.application.ports.input.commands.CreaContoCorrenteCmd;
-import neo.bank.contocorrente.application.ports.input.commands.ImpostaSogliaBonificoGiornalieraCmd;
-import neo.bank.contocorrente.application.ports.input.commands.ImpostaSogliaBonificoMensileCmd;
+import neo.bank.contocorrente.application.ports.input.commands.ImpostaSogliaBonificoCmd;
 import neo.bank.contocorrente.application.ports.input.commands.PredisponiBonificoCmd;
 import neo.bank.contocorrente.application.ports.input.commands.RecuperaContoCorrenteCmd;
 import neo.bank.contocorrente.application.ports.input.commands.RecuperaTransazioniCmd;
@@ -20,24 +16,19 @@ import neo.bank.contocorrente.application.ports.input.commands.RipristinaSaldoCm
 import neo.bank.contocorrente.application.ports.output.ContoCorrenteOutputPort;
 import neo.bank.contocorrente.application.ports.output.IbanProjectionRepositoryPort;
 import neo.bank.contocorrente.domain.models.aggregates.ContoCorrente;
-import neo.bank.contocorrente.domain.models.events.TipologiaFlusso;
 import neo.bank.contocorrente.domain.models.vo.DatiBonifico;
 import neo.bank.contocorrente.domain.models.vo.IdContoCorrente;
-import neo.bank.contocorrente.domain.models.vo.IdTransazione;
-import neo.bank.contocorrente.domain.models.vo.RispostaPaginata;
-import neo.bank.contocorrente.domain.models.vo.Transazione;
+import neo.bank.contocorrente.domain.models.vo.VORispostaPaginata;
+import neo.bank.contocorrente.domain.models.vo.VOTransazione;
 import neo.bank.contocorrente.domain.services.AnagraficaClienteService;
+import neo.bank.contocorrente.domain.services.ApplicaBonificoDomainService;
 import neo.bank.contocorrente.domain.services.BonificoService;
 import neo.bank.contocorrente.domain.services.GeneratoreCoordinateBancarieService;
-import neo.bank.contocorrente.domain.services.GeneratoreIdService;
 import neo.bank.contocorrente.domain.services.TransazioniService;
 
 @ApplicationScoped
 @Slf4j
 public class ContoCorrenteUseCase {
-    
-    @Inject
-    private GeneratoreIdService generatoreIdService;
     
     @Inject
     private GeneratoreCoordinateBancarieService generatoreCoordinateBancarie;
@@ -54,12 +45,17 @@ public class ContoCorrenteUseCase {
     @Inject
     private TransazioniService transazioniService;
 
-    @Inject BonificoService operazioneService;
+    @Inject 
+    private BonificoService operazioneService;
+
+    @Inject
+    private ApplicaBonificoDomainService applicaBonificoDomainService;
+
 
 
     public void creaContoCorrente(CreaContoCorrenteCmd cmd) {
         log.info("Comando [creaContoCorrente] in esecuzione...");
-        ContoCorrente cc = ContoCorrente.apri(generatoreIdService, generatoreCoordinateBancarie, anagraficaClienteService, cmd.getUsernameCliente());
+        ContoCorrente cc = ContoCorrente.apri(generatoreCoordinateBancarie, anagraficaClienteService, cmd.getUsernameCliente());
         ccOutputPort.salva(cc);
         ibanProjRepoPort.salva(cc.getCoordinateBancarie().getIban(), cc.getIdContoCorrente());
         log.info("Comando [creaContoCorrente] terminato...");
@@ -68,6 +64,9 @@ public class ContoCorrenteUseCase {
     public void associaCarta(AssociaCartaCmd cmd) {
         log.info("Comando [associaCarta] in esecuzione...");
         IdContoCorrente idContoCorrente = ibanProjRepoPort.recuperaDaIban(cmd.getIban());
+         if(idContoCorrente == null) {
+            throw new ContoCorrenteNonTrovatoException(cmd.getIban());
+        }
         ContoCorrente cc = ccOutputPort.recuperaDaId(idContoCorrente);
         cc.associaCarta(cmd.getUsernameCliente(), cmd.getNumeroCarta());
         ccOutputPort.salva(cc);
@@ -85,24 +84,33 @@ public class ContoCorrenteUseCase {
     public ContoCorrente recuperaContoCorrenteDaIban(RecuperaContoCorrenteCmd cmd) {
         log.info("Recupero info contoCorrente per iban [{}]", cmd.getIban().getCodice());
         IdContoCorrente idContoCorrente = ibanProjRepoPort.recuperaDaIban(cmd.getIban());
+         if(idContoCorrente == null) {
+            throw new ContoCorrenteNonTrovatoException(cmd.getIban());
+        }
         ContoCorrente contoCorrente = ccOutputPort.recuperaDaId(idContoCorrente);
         contoCorrente.verificaAccessoCliente(cmd.getUsernameCliente());
         log.info("Recupero terminato");
         return contoCorrente;
     }
 
-    public void impostaSogliaBonificoGiornaliera(ImpostaSogliaBonificoGiornalieraCmd cmd) {
+    public void impostaSogliaBonificoGiornaliera(ImpostaSogliaBonificoCmd cmd) {
         log.info("Comando [impostaSogliaBonificoGiornaliera] in esecuzione...");
         IdContoCorrente idContoCorrente = ibanProjRepoPort.recuperaDaIban(cmd.getIban());
+        if(idContoCorrente == null) {
+            throw new ContoCorrenteNonTrovatoException(cmd.getIban());
+        }
         ContoCorrente cc = ccOutputPort.recuperaDaId(idContoCorrente);
         cc.impostaSogliaBonificoGiornaliero(cmd.getUsernameCliente(), cmd.getNuovaSogliaBonifico());
         ccOutputPort.salva(cc);
         log.info("Comando [impostaSogliaBonificoGiornaliera] terminato...");
     }
 
-    public void impostaSogliaBonificoMensile(ImpostaSogliaBonificoMensileCmd cmd) {
+    public void impostaSogliaBonificoMensile(ImpostaSogliaBonificoCmd cmd) {
         log.info("Comando [impostaSogliaBonificoMensile] in esecuzione...");
         IdContoCorrente idContoCorrente = ibanProjRepoPort.recuperaDaIban(cmd.getIban());
+         if(idContoCorrente == null) {
+            throw new ContoCorrenteNonTrovatoException(cmd.getIban());
+        }
         ContoCorrente cc = ccOutputPort.recuperaDaId(idContoCorrente);
         cc.impostaSogliaBonificoMensile(cmd.getUsernameCliente(), cmd.getNuovaSogliaBonifico());
         ccOutputPort.salva(cc);
@@ -112,6 +120,9 @@ public class ContoCorrenteUseCase {
     public void predisponiBonifico(PredisponiBonificoCmd cmd) {
         log.info("Comando [predisponiBonifico] in esecuzione...");
         IdContoCorrente idContoCorrente = ibanProjRepoPort.recuperaDaIban(cmd.getIbanMittente());
+        if(idContoCorrente == null) {
+            throw new ContoCorrenteNonTrovatoException(cmd.getIbanMittente());
+        }
         ContoCorrente cc = ccOutputPort.recuperaDaId(idContoCorrente);
         cc.predisponiBonifico(cmd.getIbanDestinatario(), cmd.getCausale(), cmd.getImporto(), cmd.getUsernameCliente(), transazioniService);
         ccOutputPort.salva(cc);
@@ -128,47 +139,50 @@ public class ContoCorrenteUseCase {
 
     public void applicaBonifico(AggiornaSaldoCmd cmd) {
         log.info("Comando [aggiornaSaldo] in esecuzione...");
-        
         DatiBonifico datiOperazione = operazioneService.recuperaDettaglioBonifico(cmd.getIdOperazione());
-        IdContoCorrente idCCAccredito = ibanProjRepoPort.recuperaDaIban(datiOperazione.getIbanDestinatario());
         double importo = Math.abs(datiOperazione.getImporto());
-        if(idCCAccredito != null) {
+        ContoCorrente ccMittente = null;
+        IdContoCorrente idCCMittente = ibanProjRepoPort.recuperaDaIban(datiOperazione.getIbanMittente());
+        if(idCCMittente != null) {
             log.info("Iban presente nel sistema bancario. Aggiornamento saldo del destinatario..");
-            ContoCorrente ccAccredito = ccOutputPort.recuperaDaId(idCCAccredito);
-            ccAccredito.aggiornaSaldoContabile(importo);
-            ccAccredito.aggiornaSaldoDisponibile(importo);
-            ccOutputPort.salva(ccAccredito);
-            transazioniService.creaTransazione(new Transazione(new IdTransazione(UUID.randomUUID().toString()), idCCAccredito, datiOperazione.getIdOperazione(), datiOperazione.getImporto(), datiOperazione.getIbanMittente(), LocalDateTime.now(ZoneOffset.UTC), datiOperazione.getCausale(), TipologiaFlusso.ACCREDITO));
+            ccMittente = ccOutputPort.recuperaDaId(idCCMittente);
         }
-        IdContoCorrente idCCAddebito = ibanProjRepoPort.recuperaDaIban(datiOperazione.getIbanMittente());
-        if(idCCAddebito != null) { 
+        IdContoCorrente idCCDestinatario = ibanProjRepoPort.recuperaDaIban(datiOperazione.getIbanDestinatario());
+        ContoCorrente ccDestinatario = null;
+        if(idCCDestinatario != null) { 
             log.info("Iban presente nel sistema bancario. Aggiornamento saldo del mittente..");
-            ContoCorrente ccAddebito = ccOutputPort.recuperaDaId(idCCAddebito);
-            ccAddebito.aggiornaSaldoContabile(datiOperazione.getImporto() * -1);
-            ccOutputPort.salva(ccAddebito);
-            transazioniService.creaTransazione(new Transazione(new IdTransazione(UUID.randomUUID().toString()), idCCAddebito, datiOperazione.getIdOperazione(), datiOperazione.getImporto(), datiOperazione.getIbanDestinatario(), LocalDateTime.now(ZoneOffset.UTC), datiOperazione.getCausale(), TipologiaFlusso.ADDEBITO));
-            log.info("Comando [aggiornaSaldo] terminato...");
+            ccDestinatario = ccOutputPort.recuperaDaId(idCCDestinatario);
+        }
+        applicaBonificoDomainService.applica(ccMittente, ccDestinatario, datiOperazione, importo);
+        if(ccMittente != null) {
+             ccOutputPort.salva(ccMittente);
+        }
+       if(ccMittente != null) {
+            ccOutputPort.salva(ccDestinatario);
         }
     }
 
     public void ripristinaSaldo(RipristinaSaldoCmd cmd) {
         log.info("Comando [ripristinaSaldo] in esecuzione...");
         DatiBonifico datiOperazione = operazioneService.recuperaDettaglioBonifico(cmd.getIdOperazione());
-        IdContoCorrente idCCAddebito = ibanProjRepoPort.recuperaDaIban(datiOperazione.getIbanMittente());
-        ContoCorrente ccAddebito = ccOutputPort.recuperaDaId(idCCAddebito);
+        IdContoCorrente idCCDestinatario = ibanProjRepoPort.recuperaDaIban(datiOperazione.getIbanMittente());
+        ContoCorrente ccDestinatario = ccOutputPort.recuperaDaId(idCCDestinatario);
         transazioniService.cancellaTransazione(cmd.getIdOperazione());
-        ccAddebito.aggiornaSaldoDisponibile(Math.abs(datiOperazione.getImporto()));
-        ccOutputPort.salva(ccAddebito);
+        ccDestinatario.aggiornaSaldoDisponibile(Math.abs(datiOperazione.getImporto()));
+        ccOutputPort.salva(ccDestinatario);
         log.info("Comando [ripristinaSaldo] terminato...");
     }
 
 
-    public RispostaPaginata<Transazione>  recuperaTransazioni(RecuperaTransazioniCmd cmd) {
+    public VORispostaPaginata<VOTransazione>  recuperaTransazioni(RecuperaTransazioniCmd cmd) {
         log.info("Comando [recuperaTransazioni] in esecuzione... {}", cmd);
         IdContoCorrente idCC = ibanProjRepoPort.recuperaDaIban(cmd.getIbanRichiedente());
+        if(idCC == null) {
+            throw new ContoCorrenteNonTrovatoException(cmd.getIbanRichiedente());
+        }
         ContoCorrente cc = ccOutputPort.recuperaDaId(idCC);
         cc.verificaAccessoCliente(cmd.getUsernameCliente());
-        RispostaPaginata<Transazione> transazioni = transazioniService.recuperaTransazioni(idCC, cmd.getDataInf(), cmd.getDataSup(), cmd.getImportoMin(), cmd.getImportoMax(), cmd.getTipologiaFlusso(), cmd.getNumeroPagina(), cmd.getDimensionePagina());
+        VORispostaPaginata<VOTransazione> transazioni = transazioniService.recuperaTransazioni(idCC, cmd.getDataInf(), cmd.getDataSup(), cmd.getImportoMin(), cmd.getImportoMax(), cmd.getTipologiaFlusso(), cmd.getNumeroPagina(), cmd.getDimensionePagina());
         log.info("Comando [recuperaTransazioni] terminato...");
         return transazioni;
     }

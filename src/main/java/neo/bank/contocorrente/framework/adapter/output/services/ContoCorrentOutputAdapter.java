@@ -32,7 +32,7 @@ public class ContoCorrentOutputAdapter  implements ContoCorrenteOutputPort{
     public ContoCorrente recuperaDaId(IdContoCorrente idContoCorrente) {
         ContoCorrente cc = ccRepo.findById(idContoCorrente.getId());
         if(cc == null) {
-            throw new ContoCorrenteNonTrovatoException(idContoCorrente.getId());
+            throw new ContoCorrenteNonTrovatoException(idContoCorrente);
         }
        return cc;
     }

@@ -22,7 +22,6 @@ public class IbanProjectionRepositoryImpl implements PanacheMongoRepositoryBase<
     @Override
     public IdContoCorrente recuperaDaIban(Iban iban) {
         IbanProjectionEntity entity = findById(iban.getCodice());
-        log.info("ENTITY RECUPERATO: {}", entity);
         return entity == null ? null : new IdContoCorrente(entity.getIdContoCorrente());
     }
 

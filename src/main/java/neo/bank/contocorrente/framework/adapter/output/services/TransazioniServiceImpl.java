@@ -13,8 +13,8 @@ import neo.bank.contocorrente.domain.models.events.TipologiaFlusso;
 import neo.bank.contocorrente.domain.models.vo.Iban;
 import neo.bank.contocorrente.domain.models.vo.IdContoCorrente;
 import neo.bank.contocorrente.domain.models.vo.IdOperazione;
-import neo.bank.contocorrente.domain.models.vo.RispostaPaginata;
-import neo.bank.contocorrente.domain.models.vo.Transazione;
+import neo.bank.contocorrente.domain.models.vo.VORispostaPaginata;
+import neo.bank.contocorrente.domain.models.vo.VOTransazione;
 import neo.bank.contocorrente.domain.services.TransazioniService;
 
 @ApplicationScoped
@@ -34,7 +34,7 @@ public class TransazioniServiceImpl implements TransazioniService{
     }
 
 
-    public void creaTransazione(Transazione transazione) {
+    public void creaTransazione(VOTransazione transazione) {
         log.info("Creo transazione: {}", transazione);
         transazioniPrjRepo.salva(transazione);
     }
@@ -46,7 +46,7 @@ public class TransazioniServiceImpl implements TransazioniService{
 
 
     @Override
-    public RispostaPaginata<Transazione> recuperaTransazioni(IdContoCorrente idCC, LocalDateTime dataInf, LocalDateTime dataSup,
+    public VORispostaPaginata<VOTransazione> recuperaTransazioni(IdContoCorrente idCC, LocalDateTime dataInf, LocalDateTime dataSup,
             Double importoMin, Double importoMax, TipologiaFlusso tipologiaFlusso, int numeroPagina,
             int dimensionePagina) {
 
