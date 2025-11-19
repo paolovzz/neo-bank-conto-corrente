@@ -2,6 +2,7 @@ package neo.bank.contocorrente.framework.adapter.input.rest;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -91,11 +92,18 @@ public class ContoCorrenteResource implements ContoCorrenteApi {
             Integer numeroPagina, Integer dimensionePagina) {
 
         log.info("Richiesta recupero trandazioni  : [{}]", xAuthenticatedUser);
-                 VORispostaPaginata<VOTransazione> rp = app.recuperaTransazioni(new RecuperaTransazioniCmd(new UsernameCliente(xAuthenticatedUser), new Iban(iban), dataCreazioneMin != null ? dataCreazioneMin.atStartOfDay() : null, dataCreazioneMax != null ? dataCreazioneMax.atTime(LocalTime.MAX): null, importoMin, importoMax, neo.bank.contocorrente.domain.models.events.TipologiaFlusso.valueOf(tipologiaFlusso.name()), numeroPagina, dimensionePagina));
+                 VORispostaPaginata<VOTransazione> rp = app.recuperaTransazioni(new RecuperaTransazioniCmd(new UsernameCliente(xAuthenticatedUser), new Iban(iban), dataCreazioneMin != null ? dataCreazioneMin.atStartOfDay() : null, dataCreazioneMax != null ? dataCreazioneMax.atTime(LocalTime.MAX): null, importoMin, importoMax, tipologiaFlusso != null ?  neo.bank.contocorrente.domain.models.events.TipologiaFlusso.valueOf(tipologiaFlusso.name()) : null, numeroPagina, dimensionePagina));
                 List<TransazioneResponse> contenuto = rp.getResult().stream().map( t -> {
-                    TransazioneResponse transazioneResponse = new TransazioneResponse();
-
-                    return transazioneResponse;
+                    TransazioneResponse res = new TransazioneResponse();
+                    res.setCausale(t.getCausale());
+                    res.setDataCreazione(t.getDataCreazione().toInstant(ZoneOffset.UTC));
+                    res.setIban(t.getIban().getCodice());
+                    res.setIdContoCorrente(t.getIdContoCorrente().getId());
+                    res.setIdOperazione(t.getIdOperazione().getId());
+                    res.setIdTransazione(t.getIdTransazione().getId());
+                    res.setImporto(t.getImporto());
+                    res.setTipologiaFlusso(TipologiaFlussoEnum.valueOf(t.getTipologiaFlusso().name()));
+                    return res;
                 }).toList();
         return Response.ok(new RispostaPaginataTransazioni(rp.getNumeroPagina(), rp.getDimensionePagina(), rp.getTotaleRisultati(), contenuto)).build();
     }

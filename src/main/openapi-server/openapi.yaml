@@ -362,7 +362,7 @@ components:
 
     TipologiaFlussoEnum:
       type: string
-      enum: [ENTRATA, USCITA]
+      enum: [ACCREDITO, ADDEBITO]
 
     TransazioneResponse:
       type: object
