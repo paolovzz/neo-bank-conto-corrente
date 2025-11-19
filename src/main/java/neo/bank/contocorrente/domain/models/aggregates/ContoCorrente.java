@@ -100,7 +100,7 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
           throw new BusinessRuleException(String.format("Importo [%s] non disponibile", importAbs));  
         }
         LocalDate oggi = LocalDate.now();
-        double totaleBonificiOggi = transazioniService.richiediTotaleBonificiUscita(coordinateBancarie.getIban(), oggi, oggi);
+        double totaleBonificiOggi = transazioniService.richiediTotaleBonificiUscita(idContoCorrente, oggi, oggi);
         if(sogliaBonificoGiornaliera < totaleBonificiOggi + importAbs) {
             throw new BusinessRuleException("Impossibile inviare il bonifico: raggiunto il limite giornaliero");  
         }
@@ -108,8 +108,7 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
         YearMonth meseCorrente = YearMonth.now();
         LocalDate primoGiornoDelMeseCorrente = meseCorrente.atDay(1);
         LocalDate ultimoGiornoDelMeseCorrente = meseCorrente.atEndOfMonth();
-        double totaleBonificQuestoMese = transazioniService.
-                                            richiediTotaleBonificiUscita(coordinateBancarie.getIban(), primoGiornoDelMeseCorrente, ultimoGiornoDelMeseCorrente);
+        double totaleBonificQuestoMese = transazioniService.richiediTotaleBonificiUscita(idContoCorrente, primoGiornoDelMeseCorrente, ultimoGiornoDelMeseCorrente);
         if(sogliaBonificoMensile < totaleBonificQuestoMese + importAbs) {
             throw new BusinessRuleException("Impossibile inviare il bonifico: raggiunto il limite mensile");  
         }

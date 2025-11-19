@@ -63,11 +63,11 @@ public class TransazioneProjectionRepositoryImpl implements PanacheMongoReposito
     }
 
     @Override
-    public double calcolaTotaleBonificiUscita(Iban iban, LocalDateTime dataInf, LocalDateTime dataSup) {
+    public double calcolaTotaleBonificiUscita(IdContoCorrente idContoCorrente, LocalDateTime dataInf, LocalDateTime dataSup) {
 
         List<Bson> pipeline = List.of(
             Aggregates.match(Filters.and(
-                Filters.eq("iban", iban.getCodice()),
+                Filters.eq("idContoCorrente", idContoCorrente.getId()),
                 Filters.eq("tipologiaFlusso", TipologiaFlusso.ADDEBITO),
                 Filters.gte("dataCreazione", dataInf),
                 Filters.lte("dataCreazione", dataSup)

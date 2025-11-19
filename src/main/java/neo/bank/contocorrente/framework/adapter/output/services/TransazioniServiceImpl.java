@@ -26,9 +26,9 @@ public class TransazioniServiceImpl implements TransazioniService{
     private TransazioneProjectionRepositoryPort transazioniPrjRepo;
 
     @Override
-    public double richiediTotaleBonificiUscita(Iban iban, LocalDate dataInf, LocalDate dataSup) {
-        log.info("Recupero totale bonifici in uscita per l'iban [{}] nel periodo tra [{}] e [{}]", iban.getCodice(), dataInf, dataSup);
-        double totale = transazioniPrjRepo.calcolaTotaleBonificiUscita(iban, dataInf.atStartOfDay(ZoneOffset.UTC).toLocalDateTime(), dataSup.atTime(LocalTime.MAX));
+    public double richiediTotaleBonificiUscita(IdContoCorrente idContoCorrente,  LocalDate dataInf, LocalDate dataSup) {
+        log.info("Recupero totale bonifici in uscita per idContoCorrente [{}] nel periodo tra [{}] e [{}]", idContoCorrente.getId(), dataInf, dataSup);
+        double totale = transazioniPrjRepo.calcolaTotaleBonificiUscita(idContoCorrente, dataInf.atStartOfDay(ZoneOffset.UTC).toLocalDateTime(), dataSup.atTime(LocalTime.MAX));
         log.info("Totale bonifici recuperato: [{}]", totale);
         return totale;
     }
