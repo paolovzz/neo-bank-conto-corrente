@@ -88,7 +88,7 @@ public class ContoCorrenteUseCase {
             throw new ContoCorrenteNonTrovatoException(cmd.getIban());
         }
         ContoCorrente contoCorrente = ccOutputPort.recuperaDaId(idContoCorrente);
-        contoCorrente.verificaAccessoCliente(cmd.getUsernameCliente());
+        contoCorrente.verificaIntestatario(cmd.getUsernameCliente());
         log.info("Recupero terminato");
         return contoCorrente;
     }
@@ -181,7 +181,7 @@ public class ContoCorrenteUseCase {
             throw new ContoCorrenteNonTrovatoException(cmd.getIbanRichiedente());
         }
         ContoCorrente cc = ccOutputPort.recuperaDaId(idCC);
-        cc.verificaAccessoCliente(cmd.getUsernameCliente());
+        cc.verificaIntestatario(cmd.getUsernameCliente());
         VORispostaPaginata<VOTransazione> transazioni = transazioniService.recuperaTransazioni(idCC, cmd.getDataInf(), cmd.getDataSup(), cmd.getImportoMin(), cmd.getImportoMax(), cmd.getTipologiaFlusso(), cmd.getNumeroPagina(), cmd.getDimensionePagina());
         log.info("Comando [recuperaTransazioni] terminato...");
         return transazioni;

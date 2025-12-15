@@ -68,7 +68,7 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
     }
 
     public void impostaSogliaBonificoGiornaliero(UsernameCliente usernameClienteRichiedente, int nuovaSogliaBonifico) {
-        verificaAccessoCliente(usernameClienteRichiedente);
+        verificaIntestatario(usernameClienteRichiedente);
         verificaContoChiuso();
         if(nuovaSogliaBonifico > sogliaBonificoMensile) {
             throw new BusinessRuleException(String.format("Soglia bonifici giornaliera non puo' essere maggiore della soglia bonifici mensile"));  
@@ -77,7 +77,7 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
     }
 
     public void impostaSogliaBonificoMensile(UsernameCliente usernameClienteRichiedente, int nuovaSogliaBonifico) {
-        verificaAccessoCliente(usernameClienteRichiedente);
+        verificaIntestatario(usernameClienteRichiedente);
         verificaContoChiuso();
         if(nuovaSogliaBonifico < sogliaBonificoGiornaliera) {
             throw new BusinessRuleException(String.format("Soglia bonifici mensile non puo' essere maggiore della soglia bonifici giornaliera"));  
@@ -86,14 +86,14 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
     }
 
     public void associaCarta(UsernameCliente usernameClienteRichiedente, NumeroCarta numeroCarta) {
-        verificaAccessoCliente(usernameClienteRichiedente);
+        verificaIntestatario(usernameClienteRichiedente);
         verificaContoChiuso();
         events(new CartaAssociata(numeroCarta));
     }
 
     public void predisponiBonifico(Iban ibanDestinatario, String causale, double importo, UsernameCliente clienteRichiedente, TransazioniService transazioniService) {
         
-        verificaAccessoCliente(clienteRichiedente);
+        verificaIntestatario(clienteRichiedente);
         verificaContoChiuso();
         double importAbs = Math.abs(importo);
         if(Math.abs(saldoDisponibile) < importAbs) {
@@ -124,7 +124,7 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
         events(new SaldoDisponibileAggiornato(importo));
     }
 
-    public void verificaAccessoCliente(UsernameCliente usernameCliente) {
+    public void verificaIntestatario(UsernameCliente usernameCliente) {
         if( !intestatario.equals(usernameCliente)){
             throw new AccessoNonAutorizzatoException(usernameCliente.getUsername());
         }
