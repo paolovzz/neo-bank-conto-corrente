@@ -12,7 +12,7 @@ public class Iban {
     private String codice;
 
     public Iban(String codice) {
-        if (codice == null) {
+        if (codice == null || codice.isBlank()) {
             throw new ValidazioneException(Iban.class.getSimpleName(),
                     CodiceErrore.IBAN_NON_PUO_ESSERE_NULL.getCodice());
         }

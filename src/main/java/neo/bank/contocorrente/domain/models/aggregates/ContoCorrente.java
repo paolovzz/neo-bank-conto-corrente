@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +27,7 @@ import neo.bank.contocorrente.domain.models.vo.DataChiusura;
 import neo.bank.contocorrente.domain.models.vo.Iban;
 import neo.bank.contocorrente.domain.models.vo.IdContoCorrente;
 import neo.bank.contocorrente.domain.models.vo.NumeroCarta;
+import neo.bank.contocorrente.domain.models.vo.SogliaBonifico;
 import neo.bank.contocorrente.domain.models.vo.UsernameCliente;
 import neo.bank.contocorrente.domain.services.AnagraficaClienteService;
 import neo.bank.contocorrente.domain.services.GeneratoreCoordinateBancarieService;
@@ -42,8 +42,8 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
     public static final String AGGREGATE_NAME = "CONTO_CORRENTE";
     private IdContoCorrente idContoCorrente;
     private CoordinateBancarie coordinateBancarie;
-    private int sogliaBonificoGiornaliera = 1000;
-    private int sogliaBonificoMensile = 3000;
+    private SogliaBonifico sogliaBonificoGiornaliera = new SogliaBonifico(1000);
+    private SogliaBonifico sogliaBonificoMensile = new SogliaBonifico(3000);
     private DataApertura dataApertura;
     private double saldoContabile;
     private double saldoDisponibile;
@@ -67,19 +67,19 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
         return cc;
     }
 
-    public void impostaSogliaBonificoGiornaliero(UsernameCliente usernameClienteRichiedente, int nuovaSogliaBonifico) {
+    public void impostaSogliaBonificoGiornaliero(UsernameCliente usernameClienteRichiedente, SogliaBonifico nuovaSogliaBonifico) {
         verificaIntestatario(usernameClienteRichiedente);
         verificaContoChiuso();
-        if(nuovaSogliaBonifico > sogliaBonificoMensile) {
+        if(nuovaSogliaBonifico.getSoglia() > sogliaBonificoMensile.getSoglia()) {
             throw new BusinessRuleException(String.format("Soglia bonifici giornaliera non puo' essere maggiore della soglia bonifici mensile"));  
         }
         events(new SogliaBonificoGiornalieraImpostata(nuovaSogliaBonifico));
     }
 
-    public void impostaSogliaBonificoMensile(UsernameCliente usernameClienteRichiedente, int nuovaSogliaBonifico) {
+    public void impostaSogliaBonificoMensile(UsernameCliente usernameClienteRichiedente, SogliaBonifico nuovaSogliaBonifico) {
         verificaIntestatario(usernameClienteRichiedente);
         verificaContoChiuso();
-        if(nuovaSogliaBonifico < sogliaBonificoGiornaliera) {
+        if(nuovaSogliaBonifico.getSoglia() < sogliaBonificoGiornaliera.getSoglia()) {
             throw new BusinessRuleException(String.format("Soglia bonifici mensile non puo' essere maggiore della soglia bonifici giornaliera"));  
         }
         events(new SogliaBonificoMensileImpostata(nuovaSogliaBonifico));
@@ -95,13 +95,16 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
         
         verificaIntestatario(clienteRichiedente);
         verificaContoChiuso();
-        double importAbs = Math.abs(importo);
-        if(Math.abs(saldoDisponibile) < importAbs) {
-          throw new BusinessRuleException(String.format("Importo [%s] non disponibile", importAbs));  
+        if (importo <= 0) {
+            throw new BusinessRuleException(String.format("L'importo del bonifico dev'essere strettamente maggiore di zero"));  
+        }
+
+        if(Math.abs(saldoDisponibile) < importo) {
+          throw new BusinessRuleException(String.format("Importo [%s] non disponibile", importo));  
         }
         LocalDate oggi = LocalDate.now();
         double totaleBonificiOggi = transazioniService.richiediTotaleBonificiUscita(idContoCorrente, oggi, oggi);
-        if(sogliaBonificoGiornaliera < totaleBonificiOggi + importAbs) {
+        if(sogliaBonificoGiornaliera.getSoglia() < totaleBonificiOggi + importo) {
             throw new BusinessRuleException("Impossibile inviare il bonifico: raggiunto il limite giornaliero");  
         }
 
@@ -109,7 +112,7 @@ public class ContoCorrente extends AggregateRoot<ContoCorrente> implements Appli
         LocalDate primoGiornoDelMeseCorrente = meseCorrente.atDay(1);
         LocalDate ultimoGiornoDelMeseCorrente = meseCorrente.atEndOfMonth();
         double totaleBonificQuestoMese = transazioniService.richiediTotaleBonificiUscita(idContoCorrente, primoGiornoDelMeseCorrente, ultimoGiornoDelMeseCorrente);
-        if(sogliaBonificoMensile < totaleBonificQuestoMese + importAbs) {
+        if(sogliaBonificoMensile.getSoglia() < totaleBonificQuestoMese + importo) {
             throw new BusinessRuleException("Impossibile inviare il bonifico: raggiunto il limite mensile");  
         }
         events(new BonificoPredisposto(coordinateBancarie.getIban(), ibanDestinatario, importo,  causale));

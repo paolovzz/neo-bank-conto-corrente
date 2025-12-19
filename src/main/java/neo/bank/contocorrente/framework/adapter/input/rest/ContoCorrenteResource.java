@@ -17,6 +17,7 @@ import neo.bank.contocorrente.application.ports.input.commands.RecuperaContoCorr
 import neo.bank.contocorrente.application.ports.input.commands.RecuperaTransazioniCmd;
 import neo.bank.contocorrente.domain.models.aggregates.ContoCorrente;
 import neo.bank.contocorrente.domain.models.vo.Iban;
+import neo.bank.contocorrente.domain.models.vo.SogliaBonifico;
 import neo.bank.contocorrente.domain.models.vo.UsernameCliente;
 import neo.bank.contocorrente.domain.models.vo.VORispostaPaginata;
 import neo.bank.contocorrente.domain.models.vo.VOTransazione;
@@ -47,7 +48,7 @@ public class ContoCorrenteResource implements ContoCorrenteApi {
             ImpostaSogliaBonificoRequest request) {
 
         log.info("Richiesto aggiornamento soglia bonifico giornaliera : [{}] - {}", xAuthenticatedUser, request);
-        app.impostaSogliaBonificoGiornaliera(new ImpostaSogliaBonificoCmd(new UsernameCliente(xAuthenticatedUser), new Iban(request.getIban()), request.getNuovaSoglia()));
+        app.impostaSogliaBonificoGiornaliera(new ImpostaSogliaBonificoCmd(new UsernameCliente(xAuthenticatedUser), new Iban(request.getIban()), new SogliaBonifico(request.getNuovaSoglia())));
         return Response.noContent().build();
     }
 
@@ -55,7 +56,7 @@ public class ContoCorrenteResource implements ContoCorrenteApi {
     public Response impostaSogliaBonificoMensile(String xAuthenticatedUser, ImpostaSogliaBonificoRequest request) {
         
         log.info("Richiesto aggiornamento soglia bonifico mensile : [{}] - {}", xAuthenticatedUser, request);
-        app.impostaSogliaBonificoMensile(new ImpostaSogliaBonificoCmd(new UsernameCliente(xAuthenticatedUser), new Iban(request.getIban()), request.getNuovaSoglia()));
+        app.impostaSogliaBonificoMensile(new ImpostaSogliaBonificoCmd(new UsernameCliente(xAuthenticatedUser), new Iban(request.getIban()), new SogliaBonifico(request.getNuovaSoglia())));
         return Response.noContent().build();
     }
 
@@ -80,8 +81,8 @@ public class ContoCorrenteResource implements ContoCorrenteApi {
                                                     .numeroConto(contoCorrente.getCoordinateBancarie().getNumeroConto().getNumero())
                                                     .saldoContabile(contoCorrente.getSaldoContabile())
                                                     .saldoDisponibile(contoCorrente.getSaldoDisponibile())
-                                                    .sogliaBonificiGiornaliera(contoCorrente.getSogliaBonificoGiornaliera())
-                                                    .sogliaBonificiMensile(contoCorrente.getSogliaBonificoMensile())
+                                                    .sogliaBonificiGiornaliera(contoCorrente.getSogliaBonificoGiornaliera().getSoglia())
+                                                    .sogliaBonificiMensile(contoCorrente.getSogliaBonificoMensile().getSoglia())
                                                     .build();
         return Response.ok(bodyResponse).build();
     }

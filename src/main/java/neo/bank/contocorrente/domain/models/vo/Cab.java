@@ -12,7 +12,7 @@ public class Cab {
     private String codice;
 
     public Cab(String codice) {
-        if (codice == null) {
+        if (codice == null || codice.isBlank()) {
             throw new ValidazioneException(Cab.class.getSimpleName(),
                     CodiceErrore.CODICE_CAB_NON_PUO_ESSERE_NULL.getCodice());
         }

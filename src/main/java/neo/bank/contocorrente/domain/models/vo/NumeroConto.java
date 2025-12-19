@@ -14,7 +14,7 @@ public class NumeroConto {
     private String numero;
     
     public NumeroConto(String numero) {
-         if (numero == null) {
+         if (numero == null || numero.isBlank()) {
             throw new ValidazioneException(NumeroConto.class.getSimpleName(), CodiceErrore.NUMERO_CONTO_NON_PUO_ESSERE_NULL.getCodice());
         }
         this.numero = numero;

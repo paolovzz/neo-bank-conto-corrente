@@ -13,7 +13,7 @@ public class Bic {
     private String codice;
 
     public Bic(String codice) {
-        if (codice == null) {
+        if (codice == null || codice.isBlank()) {
             throw new ValidazioneException(Bic.class.getSimpleName(), CodiceErrore.CODICE_SWIFT_NON_PUO_ESSERE_NULL.getCodice());
         }
         this.codice = codice;

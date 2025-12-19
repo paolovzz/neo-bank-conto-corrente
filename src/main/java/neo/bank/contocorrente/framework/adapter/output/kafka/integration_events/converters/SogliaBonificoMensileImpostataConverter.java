@@ -10,7 +10,7 @@ public class SogliaBonificoMensileImpostataConverter implements IntegrationEvent
     @Override
     public IESogliaBonificoMensileImpostata convert(SogliaBonificoMensileImpostata ev) {
 
-        return new IESogliaBonificoMensileImpostata(ev.getNuovaSogliaBonifico());
+        return new IESogliaBonificoMensileImpostata(ev.getNuovaSogliaBonifico().getSoglia());
     }
 
     @Override

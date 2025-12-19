@@ -8,17 +8,17 @@ import neo.bank.contocorrente.domain.models.enums.CodiceErrore;
 
 @Getter
 @EqualsAndHashCode
-public class IdOperazione {
+public class SogliaBonifico {
 
-    private String id;
+    private int soglia;
 
-    public IdOperazione(String id) {
-        if (id == null || id.isBlank()) {
+    public SogliaBonifico(int soglia) {
+        if (soglia <= 0) {
             throw new ValidazioneException(
-                IdOperazione.class.getSimpleName(),
-                CodiceErrore.ID_NON_PUO_ESSERE_NULL.getCodice()
+                SogliaBonifico.class.getSimpleName(),
+                CodiceErrore.SOGLIA_BONIFICO_NON_PUO_ESSERE_MINORE_UGUALE_A_ZERO.getCodice()
             );
         }
-        this.id = id;
+        this.soglia = soglia;
     }
 }
